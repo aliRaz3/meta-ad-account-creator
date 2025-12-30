@@ -120,7 +120,7 @@ class ProcessBmJob implements ShouldQueue
                         ]);
 
                         // Increment processed count
-                        // $this->bmJob->increment('processed_ad_accounts');
+                        $this->bmJob->increment('processed_ad_accounts');
 
                         Log::info("BmJob {$this->bmJob->id}: Successfully created ad account '{$accountName}'");
                     } else {
@@ -135,7 +135,6 @@ class ProcessBmJob implements ShouldQueue
 
                         throw new \Exception("Failed to create ad account '{$accountName}': {$errorMessage}");
                     }
-                    $this->bmJob->increment('processed_ad_accounts');
                 } catch (\Exception $e) {
                     // Mark ad account as Failed due to exception
                     $existingAccount->update([
@@ -149,13 +148,18 @@ class ProcessBmJob implements ShouldQueue
                     ]);
 
                     Log::error("BmJob {$this->bmJob->id}: Exception creating ad account '{$accountName}': {$e->getMessage()}");
+                    throw $e;
                 }
             }
 
             // Job completed successfully
-            $this->bmJob->update([
-                'status' => 'Completed',
-            ]);
+            if ($this->bmJob->processed_ad_accounts >= $this->bmJob->total_ad_accounts) {
+                $this->bmJob->update([
+                    'status' => 'Completed',
+                ]);
+            } else {
+                throw new \Exception("Job incomplete: processed {$this->bmJob->processed_ad_accounts} of {$this->bmJob->total_ad_accounts} ad accounts.");
+            }
 
             Log::info("BmJob {$this->bmJob->id}: Completed successfully");
 
