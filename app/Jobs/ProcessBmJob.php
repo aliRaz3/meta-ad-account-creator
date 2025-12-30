@@ -17,7 +17,7 @@ class ProcessBmJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $timeout = 3600; // 1 hour timeout
-    // public int $tries = 1; // Don't retry the entire job
+    public int $tries = 5;    // Max 5 attempts
 
     protected BmJob $bmJob;
 
@@ -133,7 +133,7 @@ class ProcessBmJob implements ShouldQueue
                         $errorMessage = $metaApiService->formatError($result);
                         Log::error("BmJob {$this->bmJob->id}: Failed to create ad account '{$accountName}': {$errorMessage}");
 
-                        // Continue to next account (don't stop on individual failures)
+                        throw new \Exception("Failed to create ad account '{$accountName}': {$errorMessage}");
                     }
                     $this->bmJob->increment('processed_ad_accounts');
                 } catch (\Exception $e) {

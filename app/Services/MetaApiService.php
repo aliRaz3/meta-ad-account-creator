@@ -55,6 +55,7 @@ class MetaApiService
                     ->withHeaders([
                         'User-Agent' => 'MetaAdAccountCreator/1.0',
                     ])
+                    ->withoutVerifying()
                     ->post($url, [
                         'access_token' => $accessToken,
                         'name' => $name,
