@@ -116,6 +116,9 @@ class ListBmJobs extends ListRecords
                 ->mutateFormDataUsing(function (array $data): array {
                     $data['user_id'] = Auth::id();
                     return $data;
+                })
+                ->after(function ($record): void {
+                    BmJob::dispatchNextPendingJob($record->bm_account_id);
                 }),
         ];
     }
