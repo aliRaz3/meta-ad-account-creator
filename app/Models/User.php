@@ -68,4 +68,61 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->id === 1;
     }
+
+    /**
+     * Get the user's Telegram bots
+     */
+    public function telegramBots()
+    {
+        return $this->hasMany(UserTelegramBot::class);
+    }
+
+    /**
+     * Get the user's active Telegram bots
+     */
+    public function activeTelegramBots()
+    {
+        return $this->hasMany(UserTelegramBot::class)->where('is_active', true);
+    }
+
+    /**
+     * Get the user's proxies
+     */
+    public function proxies()
+    {
+        return $this->hasMany(UserProxy::class);
+    }
+
+    /**
+     * Get the user's active proxies
+     */
+    public function activeProxies()
+    {
+        return $this->hasMany(UserProxy::class)
+            ->where('is_active', true)
+            ->where('is_validated', true);
+    }
+
+    /**
+     * Get the user's settings
+     */
+    public function settings()
+    {
+        return $this->hasOne(UserSettings::class);
+    }
+
+    /**
+     * Get or create user settings
+     */
+    public function getOrCreateSettings(): UserSettings
+    {
+        return $this->settings()->firstOrCreate(
+            ['user_id' => $this->id],
+            [
+                'proxy_enabled' => false,
+                'proxy_rotation_type' => 'round-robin',
+                'telegram_notifications_enabled' => true,
+            ]
+        );
+    }
 }

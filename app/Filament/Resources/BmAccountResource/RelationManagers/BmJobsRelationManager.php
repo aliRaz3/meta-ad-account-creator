@@ -152,14 +152,34 @@ class BmJobsRelationManager extends RelationManager
                             ->helperText('Time zone for the ad accounts'),
                     ])
                     ->mutateFormDataUsing(function (array $data): array {
-                        $data['bm_account_id'] = $this->getOwnerRecord()->id;
                         $data['user_id'] = Auth::id();
-                        $data['status'] = 'Pending';
-                        $data['processed_ad_accounts'] = 0;
                         return $data;
                     })
-                    ->after(function (): void {
-                        BmJob::dispatchNextPendingJob($this->getOwnerRecord()->id);
+                    ->using(function (array $data): BmJob {
+                        $bmAccountIds = isset($data['bm_account_id']) ? (array) $data['bm_account_id'] : [$this->getOwnerRecord()->id];
+                        $firstJobId = null;
+
+                        foreach ($bmAccountIds as $bmAccountId) {
+                            $job = BmJob::create([
+                                'bm_account_id' => $bmAccountId,
+                                'user_id' => $data['user_id'],
+                                'pattern' => $data['pattern'],
+                                'starting_ad_account_no' => $data['starting_ad_account_no'],
+                                'total_ad_accounts' => $data['total_ad_accounts'],
+                                'currency' => $data['currency'],
+                                'time_zone' => $data['time_zone'],
+                                'status' => 'Pending',
+                                'processed_ad_accounts' => 0,
+                            ]);
+
+                            if ($firstJobId === null) {
+                                $firstJobId = $job->id;
+                            }
+
+                            BmJob::dispatchNextPendingJob($bmAccountId);
+                        }
+
+                        return BmJob::find($firstJobId);
                     }),
             ])
             ->recordActions([

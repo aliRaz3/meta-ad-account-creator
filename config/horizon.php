@@ -207,7 +207,7 @@ return [
             'maxJobs' => 0,        // unlimited jobs per worker
             'memory' => 1024,      // enough memory for long-running jobs
             'tries' => 1,
-            'timeout' => 14400,    // 4 hours in seconds
+            'timeout' => 18000,    // 5 hours in seconds
             'nice' => 0,
         ],
     ],

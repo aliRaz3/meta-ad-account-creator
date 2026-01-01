@@ -49,26 +49,25 @@ class BmJobResource extends Resource
                     ->label('BM Account')
                     ->required()
                     ->searchable()
-                    ->options(function () {
-                        return BmAccount::where('user_id', Auth::id())
-                            ->pluck('title', 'id');
-                    })
-                    ->helperText('Select the BM account to create ad accounts for'),
+                ->multiple()
+                ->options(function () {
+                    return BmAccount::where('user_id', Auth::id())
+                        ->pluck('title', 'id');
+                })
+                ->helperText('Select one or more BM accounts to create ad accounts for'),
 
-                TextInput::make('pattern')
-                    ->label('Account Name Pattern')
-                    ->required()
-                    ->placeholder('TPA-{number}')
-                    ->helperText('Use {number} as placeholder for sequential number. Example: TPA-{number}')
-                    ->maxLength(255)
-                    ->live(onBlur: true),
+            TextInput::make('pattern')
+                ->label('Account Name Pattern')
+                ->required()                ->placeholder('TPA-{number}')
+                ->helperText('Use {number} as placeholder for sequential number. Example: TPA-{number}')
+                ->maxLength(255)
+                ->live(onBlur: true),
 
-                ViewField::make('pattern_preview')
-                    ->view('filament.forms.components.pattern-preview')
-                    ->visible(fn($get) => filled($get('pattern')))
-                    ->viewData(fn($get) => [
-                        'pattern' => $get('pattern'),
-                        'starting' => $get('starting_ad_account_no') ?? 1,
+            ViewField::make('pattern_preview')
+                ->view('filament.forms.components.pattern-preview')
+                ->visible(fn($get) => filled($get('pattern')))
+                ->viewData(fn($get) => [
+                    'pattern' => $get('pattern'),                        'starting' => $get('starting_ad_account_no') ?? 1,
                         'total' => $get('total_ad_accounts') ?? 1,
                     ]),
 

@@ -117,8 +117,31 @@ class ListBmJobs extends ListRecords
                     $data['user_id'] = Auth::id();
                     return $data;
                 })
-                ->after(function ($record): void {
-                    BmJob::dispatchNextPendingJob($record->bm_account_id);
+                ->using(function (array $data): BmJob {
+                    $bmAccountIds = (array) $data['bm_account_id'];
+                    $firstJobId = null;
+
+                    foreach ($bmAccountIds as $bmAccountId) {
+                        $job = BmJob::create([
+                            'bm_account_id' => $bmAccountId,
+                            'user_id' => $data['user_id'],
+                            'pattern' => $data['pattern'],
+                            'starting_ad_account_no' => $data['starting_ad_account_no'],
+                            'total_ad_accounts' => $data['total_ad_accounts'],
+                            'currency' => $data['currency'],
+                            'time_zone' => $data['time_zone'],
+                            'status' => 'Pending',
+                            'processed_ad_accounts' => 0,
+                        ]);
+
+                        if ($firstJobId === null) {
+                            $firstJobId = $job->id;
+                        }
+
+                        BmJob::dispatchNextPendingJob($bmAccountId);
+                    }
+
+                    return BmJob::find($firstJobId);
                 }),
         ];
     }

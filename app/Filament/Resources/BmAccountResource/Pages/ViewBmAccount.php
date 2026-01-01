@@ -87,19 +87,23 @@ class ViewBmAccount extends ViewRecord
                         ->helperText('Time zone for the ad accounts'),
                 ])
                 ->action(function (array $data): void {
-                    $job = BmJob::create([
-                        'bm_account_id' => $this->record->id,
-                        'user_id' => Auth::id(),
-                        'pattern' => $data['pattern'],
-                        'starting_ad_account_no' => $data['starting_ad_account_no'],
-                        'total_ad_accounts' => $data['total_ad_accounts'],
-                        'currency' => $data['currency'],
-                        'time_zone' => $data['time_zone'],
-                        'status' => 'Pending',
-                        'processed_ad_accounts' => 0,
-                    ]);
+                    $bmAccountIds = isset($data['bm_account_id']) ? (array) $data['bm_account_id'] : [$this->record->id];
 
-                    BmJob::dispatchNextPendingJob($this->record->id);
+                    foreach ($bmAccountIds as $bmAccountId) {
+                        BmJob::create([
+                            'bm_account_id' => $bmAccountId,
+                            'user_id' => Auth::id(),
+                            'pattern' => $data['pattern'],
+                            'starting_ad_account_no' => $data['starting_ad_account_no'],
+                            'total_ad_accounts' => $data['total_ad_accounts'],
+                            'currency' => $data['currency'],
+                            'time_zone' => $data['time_zone'],
+                            'status' => 'Pending',
+                            'processed_ad_accounts' => 0,
+                        ]);
+
+                        BmJob::dispatchNextPendingJob($bmAccountId);
+                    }
                 }),
             Actions\EditAction::make()
                 ->modal()

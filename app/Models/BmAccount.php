@@ -22,6 +22,15 @@ class BmAccount extends Model
         'deleted_at' => 'datetime:Y-m-d H:i:s',
     ];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'access_token',
+    ];
+
     public function bmJobs()
     {
         return $this->hasMany(BmJob::class);

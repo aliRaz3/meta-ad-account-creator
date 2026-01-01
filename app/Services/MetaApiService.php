@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use Exception;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -11,11 +12,13 @@ class MetaApiService
 {
     protected string $baseUrl;
     protected string $apiVersion;
+    protected ?ProxyService $proxyService = null;
 
-    public function __construct()
+    public function __construct(?ProxyService $proxyService = null)
     {
         $this->baseUrl = config('adaccount.meta_api_base_url');
         $this->apiVersion = config('adaccount.meta_api_version');
+        $this->proxyService = $proxyService ?? app(ProxyService::class);
     }
 
     /**
@@ -26,6 +29,7 @@ class MetaApiService
      * @param string $name
      * @param string $currency
      * @param string $timezone
+     * @param User|null $user
      * @return array
      * @throws Exception
      */
@@ -34,13 +38,15 @@ class MetaApiService
         string $accessToken,
         string $name,
         string $currency,
-        string $timezone
+        string $timezone,
+        ?User $user = null
     ): array {
         $url = "{$this->baseUrl}/{$this->apiVersion}/{$businessId}/adaccount";
 
         $maxRetries = config('adaccount.retry_attempts', 3);
         $retryDelay = config('adaccount.retry_delay', 0);
         $lastException = null;
+        $proxy = $user ? $this->proxyService->getNextProxy($user) : null;
 
         for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
             try {
@@ -48,16 +54,26 @@ class MetaApiService
                     'business_id' => $businessId,
                     'name' => $name,
                     'attempt' => $attempt,
+                    'proxy_id' => $proxy?->id,
                 ]);
 
-                /** @var Response $response */
-                $response = Http::timeout(30)
+                $httpClient = Http::timeout(30)
                     ->withHeaders([
                         'User-Agent' => 'MetaAdAccountCreator/1.0',
                     ])
-                    ->withoutVerifying()
-                    ->post($url, [
-                        'access_token' => $accessToken,
+                    ->withoutVerifying();
+
+                // Add proxy if available
+                if ($proxy) {
+                    $httpClient = $httpClient->withOptions([
+                        'proxy' => $proxy->getProxyUrl(),
+                        'verify' => false,
+                    ]);
+                }
+
+                /** @var Response $response */
+                $response = $httpClient->post($url, [
+                    'access_token' => $accessToken,
                         'name' => $name,
                         'currency' => $currency,
                         'timezone_id' => $timezone,
@@ -69,6 +85,11 @@ class MetaApiService
                 $data = $response->json();
 
                 if ($response->successful()) {
+                    // Record proxy success if used
+                    if ($proxy) {
+                        $this->proxyService->useProxy($proxy, true);
+                    }
+
                     Log::info("Meta API: Ad account created successfully", [
                         'business_id' => $businessId,
                         'name' => $name,
@@ -89,6 +110,12 @@ class MetaApiService
                 $errorSubcode = $error['error_subcode'] ?? null;
                 $fbtraceId = $error['fbtrace_id'] ?? null;
 
+                // check if proxy used is working
+                if ($proxy && $proxy->validate() === false) {
+                    $this->proxyService->useProxy($proxy, false, 'Invalid proxy detected from response');
+                    $attempt--; // retry without counting this attempt
+                    continue;
+                }
                 // Check if it's a retryable error
                 $isRetryable = $this->isRetryableError($response->status(), $errorCode);
 
@@ -135,7 +162,15 @@ class MetaApiService
                     'name' => $name,
                     'exception' => $e->getMessage(),
                     'attempt' => $attempt,
+                    'proxy_id' => $proxy?->id,
                 ]);
+
+                // check if proxy used is working
+                if ($proxy && $proxy->validate() === false) {
+                    $this->proxyService->useProxy($proxy, false, 'Invalid proxy detected from response');
+                    $attempt--; // retry without counting this attempt
+                    continue;
+                }
 
                 if ($attempt === $maxRetries) {
                     return [

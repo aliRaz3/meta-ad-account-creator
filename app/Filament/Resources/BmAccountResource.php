@@ -19,6 +19,7 @@ use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ViewField;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -60,16 +61,24 @@ class BmAccountResource extends Resource
                     ->helperText('The Meta Business Portfolio ID')
                     ->unique(ignoreRecord: true),
 
+                Toggle::make('update_access_token')
+                    ->label('Update Access Token')
+                    ->helperText('Enable to update the access token')
+                    ->default(fn($record) => $record === null) // Default ON for create, OFF for edit
+                    ->live()
+                    ->dehydrated(false)
+                    ->columnSpan(12),
+
                 Textarea::make('access_token')
-                    ->required()
                     ->label('Access Token')
                     ->helperText('Meta API access token (will be encrypted)')
                     ->rows(3)
-                    ->columnSpan(12),
+                    ->columnSpan(12)
+                    ->required(fn($get) => $get('update_access_token') === true)
+                    ->visible(fn($get) => $get('update_access_token') === true)
+                    ->dehydrated(fn($get) => $get('update_access_token') === true)
             ])
             ->columns(12);
-
-            // ->columns(12);
     }
 
     /**
@@ -184,19 +193,23 @@ class BmAccountResource extends Resource
                                 ->helperText('Time zone for the ad accounts'),
                         ])
                         ->action(function (BmAccount $record, array $data): void {
-                            $job = BmJob::create([
-                                'bm_account_id' => $record->id,
-                                'user_id' => Auth::id(),
-                                'pattern' => $data['pattern'],
-                                'starting_ad_account_no' => $data['starting_ad_account_no'],
-                                'total_ad_accounts' => $data['total_ad_accounts'],
-                                'currency' => $data['currency'],
-                                'time_zone' => $data['time_zone'],
-                                'status' => 'Pending',
-                                'processed_ad_accounts' => 0,
-                            ]);
+                            $bmAccountIds = isset($data['bm_account_id']) ? (array) $data['bm_account_id'] : [$record->id];
 
-                            BmJob::dispatchNextPendingJob($record->id);
+                            foreach ($bmAccountIds as $bmAccountId) {
+                                BmJob::create([
+                                    'bm_account_id' => $bmAccountId,
+                                    'user_id' => Auth::id(),
+                                    'pattern' => $data['pattern'],
+                                    'starting_ad_account_no' => $data['starting_ad_account_no'],
+                                    'total_ad_accounts' => $data['total_ad_accounts'],
+                                    'currency' => $data['currency'],
+                                    'time_zone' => $data['time_zone'],
+                                    'status' => 'Pending',
+                                    'processed_ad_accounts' => 0,
+                                ]);
+
+                                BmJob::dispatchNextPendingJob($bmAccountId);
+                            }
                         }),
                     ViewAction::make(),
                     EditAction::make()

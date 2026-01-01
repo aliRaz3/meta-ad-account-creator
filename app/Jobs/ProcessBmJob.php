@@ -16,7 +16,7 @@ class ProcessBmJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $timeout = 3600; // 1 hour timeout
+    public int $timeout = 3600 * 5; // 5 hours timeout
     public int $tries = 5;    // Max 5 attempts
 
     protected BmJob $bmJob;
@@ -102,13 +102,17 @@ class ProcessBmJob implements ShouldQueue
                 Log::info("BmJob {$this->bmJob->id}: Creating ad account '{$accountName}'");
 
                 try {
-                    // Call Meta API to create ad account
+                    // Get the user for proxy support
+                    $user = $bmAccount->user;
+
+                    // Call Meta API to create ad account (with user for proxy support)
                     $result = $metaApiService->createAdAccount(
                         $bmAccount->business_portfolio_id,
                         $bmAccount->access_token,
                         $accountName,
                         $currency,
-                        $timezone
+                        $timezone,
+                        $user
                     );
 
                     if ($result['success']) {
@@ -168,8 +172,9 @@ class ProcessBmJob implements ShouldQueue
 
         } catch (\Exception $e) {
             // Job failed with exception
+
             $this->bmJob->update([
-                'status' => 'Failed',
+                'status' => (str_contains($e->getMessage(), 'exceeded the number of allowed ad accounts')) ? 'Completed' : 'Failed',
                 'error_message' => $e->getMessage(),
             ]);
 
