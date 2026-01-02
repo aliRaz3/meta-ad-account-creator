@@ -18,6 +18,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Stephenjude\FilamentDebugger\DebuggerPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -58,7 +59,8 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 \Boquizo\FilamentLogViewer\FilamentLogViewerPlugin::make()
-                ->navigationGroup('System')
+                ->navigationGroup('Debuggers'),
+                DebuggerPlugin::make()->authorize(condition: fn() => auth()->user()->canAccessDebuggers()),
             ])
             ->spa();
     }

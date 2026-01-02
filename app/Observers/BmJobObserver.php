@@ -135,4 +135,35 @@ class BmJobObserver
             ]);
         }
     }
+
+    /**
+     * Handle the BmJob "deleted" event.
+     * Cascade soft delete to all related AdAccounts
+     */
+    public function deleted(BmJob $bmJob): void
+    {
+        if ($bmJob->isForceDeleting()) {
+            // Force deleting - remove all relationships
+            return;
+        }
+
+        // Soft delete all related AdAccounts
+        $bmJob->adAccounts()->each(function ($adAccount) {
+            if (!$adAccount->trashed()) {
+                $adAccount->delete();
+            }
+        });
+    }
+
+    /**
+     * Handle the BmJob "restored" event.
+     * Restore all soft-deleted children
+     */
+    public function restored(BmJob $bmJob): void
+    {
+        // Restore all soft-deleted AdAccounts
+        $bmJob->adAccounts()->onlyTrashed()->each(function ($adAccount) {
+            $adAccount->restore();
+        });
+    }
 }

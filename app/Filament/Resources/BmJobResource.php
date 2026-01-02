@@ -11,6 +11,8 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -190,7 +192,8 @@ class BmJobResource extends Resource
                     ->relationship('bmAccount', 'title')
                     ->searchable()
                     ->preload(),
-                TrashedFilter::make(),
+                TrashedFilter::make()
+                    ->visible(fn () => Auth::user()->isAdmin()),
             ])
             ->actions([
                 ActionGroup::make([
@@ -267,6 +270,10 @@ class BmJobResource extends Resource
             ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                    RestoreBulkAction::make()
+                        ->visible(fn () => Auth::user()->isAdmin()),
+                    ForceDeleteBulkAction::make()
+                        ->visible(fn () => Auth::user()->isAdmin()),
                 ]),
             ])
             ->defaultSort('created_at', 'desc')

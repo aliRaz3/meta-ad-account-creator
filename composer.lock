@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "116be888fcba7a94919dd880c4304d2b",
+    "content-hash": "5b4ad3aa2b68bce6156a2ca40b41bd0f",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -911,79 +911,6 @@
                 "source": "https://github.com/doctrine/sql-formatter/tree/1.5.3"
             },
             "time": "2025-10-26T09:35:14+00:00"
-        },
-        {
-            "name": "dotswan/filament-laravel-pulse",
-            "version": "v2.1.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/dotswan/filament-laravel-pulse.git",
-                "reference": "f9e3d1752c1bea9835d27069a796dc570362eeab"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/dotswan/filament-laravel-pulse/zipball/f9e3d1752c1bea9835d27069a796dc570362eeab",
-                "reference": "f9e3d1752c1bea9835d27069a796dc570362eeab",
-                "shasum": ""
-            },
-            "require": {
-                "filament/filament": "^4.0",
-                "mohaphez/pulse": "^1.4",
-                "php": "^8.2",
-                "spatie/laravel-package-tools": "^1.15.0"
-            },
-            "require-dev": {
-                "laravel/framework": "^11.28",
-                "laravel/pint": "^1.0",
-                "nunomaduro/collision": "^8.6",
-                "nunomaduro/larastan": "^2.0.1",
-                "orchestra/testbench": "^9.0",
-                "pestphp/pest": "^2.0 || ^3.7",
-                "pestphp/pest-plugin-arch": "^2.0 || ^3.0",
-                "pestphp/pest-plugin-laravel": "^2.0 || ^3.1",
-                "phpstan/extension-installer": "^1.1",
-                "phpstan/phpstan-deprecation-rules": "^1.0 || ^2.0",
-                "phpstan/phpstan-phpunit": "^1.0 || ^2.0"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "aliases": {
-                        "FilamentLaravelPulse": "Dotswan\\FilamentLaravelPulse\\Facades\\FilamentLaravelPulse"
-                    },
-                    "providers": [
-                        "Dotswan\\FilamentLaravelPulse\\FilamentLaravelPulseServiceProvider"
-                    ]
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Dotswan\\FilamentLaravelPulse\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Dotswan",
-                    "email": "tech@dotswan.com",
-                    "role": "Developer"
-                }
-            ],
-            "homepage": "https://github.com/dotswan/filament-laravel-pulse",
-            "keywords": [
-                "dotswan",
-                "filament-laravel-pulse",
-                "laravel",
-                "laravel-pulse"
-            ],
-            "support": {
-                "issues": "https://github.com/dotswan/filament-laravel-pulse/issues",
-                "source": "https://github.com/dotswan/filament-laravel-pulse"
-            },
-            "time": "2025-12-08T03:08:15+00:00"
         },
         {
             "name": "dragonmantank/cron-expression",
@@ -2275,6 +2202,73 @@
             "time": "2025-12-17T00:37:48+00:00"
         },
         {
+            "name": "lab404/laravel-impersonate",
+            "version": "1.7.7",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/404labfr/laravel-impersonate.git",
+                "reference": "5033f3433a55ca8bb2cc3e4a018a39dd8a327a9f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/404labfr/laravel-impersonate/zipball/5033f3433a55ca8bb2cc3e4a018a39dd8a327a9f",
+                "reference": "5033f3433a55ca8bb2cc3e4a018a39dd8a327a9f",
+                "shasum": ""
+            },
+            "require": {
+                "laravel/framework": "^6.0 | ^7.0 | ^8.0 | ^9.0 | ^10.0 | ^11.0 | ^12.0",
+                "php": "^7.2 | ^8.0"
+            },
+            "require-dev": {
+                "mockery/mockery": "^1.3.3",
+                "orchestra/testbench": "^4.0 | ^5.0 | ^6.0 | ^7.0 | ^8.0 | ^9.0 | ^10.0",
+                "phpunit/phpunit": "^7.5 | ^8.0 | ^9.0 | ^10.0 | ^11.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Lab404\\Impersonate\\ImpersonateServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "Lab404\\Impersonate\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Marceau Casals",
+                    "email": "marceau@casals.fr"
+                }
+            ],
+            "description": "Laravel Impersonate is a plugin that allows to you to authenticate as your users.",
+            "keywords": [
+                "auth",
+                "impersonate",
+                "impersonation",
+                "laravel",
+                "laravel-package",
+                "laravel-plugin",
+                "package",
+                "plugin",
+                "user"
+            ],
+            "support": {
+                "issues": "https://github.com/404labfr/laravel-impersonate/issues",
+                "source": "https://github.com/404labfr/laravel-impersonate/tree/1.7.7"
+            },
+            "time": "2025-02-24T16:18:38+00:00"
+        },
+        {
             "name": "laravel/framework",
             "version": "v12.44.0",
             "source": {
@@ -2781,6 +2775,74 @@
                 "source": "https://github.com/laravel/serializable-closure"
             },
             "time": "2025-11-21T20:52:36+00:00"
+        },
+        {
+            "name": "laravel/telescope",
+            "version": "v5.16.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laravel/telescope.git",
+                "reference": "a868e91a0912d6a44363636f7467a8578db83026"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/laravel/telescope/zipball/a868e91a0912d6a44363636f7467a8578db83026",
+                "reference": "a868e91a0912d6a44363636f7467a8578db83026",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "laravel/framework": "^8.37|^9.0|^10.0|^11.0|^12.0",
+                "php": "^8.0",
+                "symfony/console": "^5.3|^6.0|^7.0",
+                "symfony/var-dumper": "^5.0|^6.0|^7.0"
+            },
+            "require-dev": {
+                "ext-gd": "*",
+                "guzzlehttp/guzzle": "^6.0|^7.0",
+                "laravel/octane": "^1.4|^2.0",
+                "orchestra/testbench": "^6.47.1|^7.55|^8.36|^9.15|^10.8",
+                "phpstan/phpstan": "^1.10"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Laravel\\Telescope\\TelescopeServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Laravel\\Telescope\\": "src/",
+                    "Laravel\\Telescope\\Database\\Factories\\": "database/factories/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Taylor Otwell",
+                    "email": "taylor@laravel.com"
+                },
+                {
+                    "name": "Mohamed Said",
+                    "email": "mohamed@laravel.com"
+                }
+            ],
+            "description": "An elegant debug assistant for the Laravel framework.",
+            "keywords": [
+                "debugging",
+                "laravel",
+                "monitoring"
+            ],
+            "support": {
+                "issues": "https://github.com/laravel/telescope/issues",
+                "source": "https://github.com/laravel/telescope/tree/v5.16.0"
+            },
+            "time": "2025-12-09T13:34:29+00:00"
         },
         {
             "name": "laravel/tinker",
@@ -3791,101 +3853,6 @@
                 "source": "https://github.com/Masterminds/html5-php/tree/2.10.0"
             },
             "time": "2025-07-25T09:04:22+00:00"
-        },
-        {
-            "name": "mohaphez/pulse",
-            "version": "v1.4.5",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/mohaphez/pulse.git",
-                "reference": "de81a9bd6a25d0690dd04262e58e861515699ac3"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/mohaphez/pulse/zipball/de81a9bd6a25d0690dd04262e58e861515699ac3",
-                "reference": "de81a9bd6a25d0690dd04262e58e861515699ac3",
-                "shasum": ""
-            },
-            "require": {
-                "doctrine/sql-formatter": "^1.4.1",
-                "guzzlehttp/promises": "^1.0|^2.0",
-                "illuminate/auth": "^10.48.4|^11.0.8|^12.0",
-                "illuminate/cache": "^10.48.4|^11.0.8|^12.0",
-                "illuminate/config": "^10.48.4|^11.0.8|^12.0",
-                "illuminate/console": "^10.48.4|^11.0.8|^12.0",
-                "illuminate/contracts": "^10.48.4|^11.0.8|^12.0",
-                "illuminate/database": "^10.48.4|^11.0.8|^12.0",
-                "illuminate/events": "^10.48.4|^11.0.8|^12.0",
-                "illuminate/http": "^10.48.4|^11.0.8|^12.0",
-                "illuminate/queue": "^10.48.4|^11.0.8|^12.0",
-                "illuminate/redis": "^10.48.4|^11.0.8|^12.0",
-                "illuminate/routing": "^10.48.4|^11.0.8|^12.0",
-                "illuminate/support": "^10.48.4|^11.0.8|^12.0",
-                "illuminate/view": "^10.48.4|^11.0.8|^12.0",
-                "livewire/livewire": "^3.6.4",
-                "nesbot/carbon": "^2.67|^3.0",
-                "php": "^8.1",
-                "symfony/console": "^6.0|^7.0"
-            },
-            "conflict": {
-                "nunomaduro/collision": "<7.7.0"
-            },
-            "require-dev": {
-                "guzzlehttp/guzzle": "^7.7",
-                "mockery/mockery": "^1.0",
-                "orchestra/testbench": "^8.36|^9.15|^10.8",
-                "pestphp/pest": "^2.0|^3.0|^4.0",
-                "pestphp/pest-plugin-laravel": "^2.2",
-                "phpstan/phpstan": "^1.12.21",
-                "predis/predis": "^1.0|^2.0"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "aliases": {
-                        "Pulse": "Laravel\\Pulse\\Facades\\Pulse"
-                    },
-                    "providers": [
-                        "Laravel\\Pulse\\PulseServiceProvider"
-                    ]
-                },
-                "branch-alias": {
-                    "dev-master": "1.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Laravel\\Pulse\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Mohaphez",
-                    "email": "mohaphez@example.com"
-                },
-                {
-                    "name": "Taylor Otwell",
-                    "email": "taylor@laravel.com"
-                }
-            ],
-            "description": "Laravel Pulse with Tailwind CSS 4 - A real-time application performance monitoring tool and dashboard for your Laravel application.",
-            "homepage": "https://github.com/mohaphez/pulse",
-            "keywords": [
-                "laravel",
-                "monitoring",
-                "pulse",
-                "tailwind-4",
-                "tailwindcss"
-            ],
-            "support": {
-                "issues": "https://github.com/mohaphez/pulse/issues",
-                "source": "https://github.com/mohaphez/pulse"
-            },
-            "time": "2025-12-08T02:31:31+00:00"
         },
         {
             "name": "monolog/monolog",
@@ -5974,6 +5941,114 @@
                 }
             ],
             "time": "2025-02-21T14:16:57+00:00"
+        },
+        {
+            "name": "stechstudio/filament-impersonate",
+            "version": "4.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/stechstudio/filament-impersonate.git",
+                "reference": "5596d85d358c0f4660c64de86746af9cdfc780f9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/stechstudio/filament-impersonate/zipball/5596d85d358c0f4660c64de86746af9cdfc780f9",
+                "reference": "5596d85d358c0f4660c64de86746af9cdfc780f9",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^4.0",
+                "lab404/laravel-impersonate": "^1.7"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "STS\\FilamentImpersonate\\FilamentImpersonateServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "STS\\FilamentImpersonate\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "A Filament package to impersonate your users.",
+            "support": {
+                "issues": "https://github.com/stechstudio/filament-impersonate/issues",
+                "source": "https://github.com/stechstudio/filament-impersonate/tree/4.0.2"
+            },
+            "time": "2025-12-29T15:39:47+00:00"
+        },
+        {
+            "name": "stephenjude/filament-debugger",
+            "version": "4.1.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/stephenjude/filament-debugger.git",
+                "reference": "8dffbe8a74b9c6b79e8fa64ea8de02d13bd00d41"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/stephenjude/filament-debugger/zipball/8dffbe8a74b9c6b79e8fa64ea8de02d13bd00d41",
+                "reference": "8dffbe8a74b9c6b79e8fa64ea8de02d13bd00d41",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^4.0",
+                "illuminate/contracts": "^11.0|^12.0",
+                "php": "^8.1",
+                "spatie/laravel-package-tools": "^1.16.0"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.17",
+                "nunomaduro/collision": "^8.0",
+                "orchestra/testbench": "^9.0",
+                "pestphp/pest": "^3.0",
+                "pestphp/pest-plugin-laravel": "^3.0",
+                "pestphp/pest-plugin-livewire": "^3.0",
+                "phpunit/phpunit": "^11.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Stephenjude\\FilamentDebugger\\DebuggerServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Stephenjude\\FilamentDebugger\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "stephenjude",
+                    "email": "stephenjudesuccess@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "About",
+            "homepage": "https://github.com/stephenjude/filament-debugger",
+            "keywords": [
+                "filament-debugger",
+                "laravel",
+                "stephenjude"
+            ],
+            "support": {
+                "issues": "https://github.com/stephenjude/filament-debugger/issues",
+                "source": "https://github.com/stephenjude/filament-debugger/tree/4.1.4"
+            },
+            "time": "2025-10-13T09:43:25+00:00"
         },
         {
             "name": "symfony/clock",
@@ -12568,9 +12643,5 @@
         "php": "^8.2"
     },
     "platform-dev": [],
-    "platform-overrides": {
-        "ext-pcntl": "8.3",
-        "ext-posix": "8.3"
-    },
     "plugin-api-version": "2.6.0"
 }

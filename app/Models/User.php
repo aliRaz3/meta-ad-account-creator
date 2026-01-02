@@ -10,6 +10,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Filament\Panel;
+use Illuminate\Support\Facades\Gate;
 
 class User extends Authenticatable implements FilamentUser
 {
@@ -25,6 +26,7 @@ class User extends Authenticatable implements FilamentUser
         'name',
         'email',
         'password',
+        'is_admin',
     ];
 
     /**
@@ -49,6 +51,7 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
     }
 
@@ -64,9 +67,37 @@ class User extends Authenticatable implements FilamentUser
             ->implode('');
     }
 
+    /**
+     * Check if the user can access the Filament panel
+     */
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->id === 1;
+        return true; // All authenticated users can access panel
+    }
+
+    /**
+     * Check if the user is an admin
+     */
+    public function isAdmin(): bool
+    {
+        return $this->is_admin === true;
+    }
+
+    /**
+     * Determine if the user can impersonate other users
+     */
+    public function canImpersonate(): bool
+    {
+        return $this->isAdmin();
+    }
+
+    /**
+     * Determine if the user can be impersonated
+     */
+    public function canBeImpersonated(): bool
+    {
+        // Prevent impersonating other admins
+        return !$this->isAdmin();
     }
 
     /**
@@ -124,5 +155,26 @@ class User extends Authenticatable implements FilamentUser
                 'telegram_notifications_enabled' => true,
             ]
         );
+    }
+
+    public function bmAccounts()
+    {
+        return $this->hasMany(BmAccount::class);
+    }
+
+    public function bmJobs()
+    {
+        return $this->hasMany(BmJob::class);
+    }
+
+    public function adAccounts()
+    {
+        return $this->hasMany(AdAccount::class);
+    }
+
+    public function canAccessDebuggers(): bool
+    {
+        // can access pulse, horizon, telescope, filament debugger
+        return $this->id === 1;
     }
 }

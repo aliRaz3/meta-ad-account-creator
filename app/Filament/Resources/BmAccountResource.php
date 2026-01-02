@@ -122,7 +122,8 @@ class BmAccountResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                TrashedFilter::make(),
+                TrashedFilter::make()
+                    ->visible(fn () => Auth::user()->isAdmin()),
             ])
             ->actions([
                 ActionGroup::make([
@@ -221,8 +222,10 @@ class BmAccountResource extends Resource
             ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
-                    RestoreBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
+                    RestoreBulkAction::make()
+                        ->visible(fn () => Auth::user()->isAdmin()),
+                    ForceDeleteBulkAction::make()
+                        ->visible(fn () => Auth::user()->isAdmin()),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\BmJob;
+use App\Models\User;
 use App\Observers\BmJobObserver;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,6 +23,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::define('viewPulse', function (User $user) {
+            return $user->canAccessDebuggers();
+        });
+
         BmJob::observe(BmJobObserver::class);
     }
 }

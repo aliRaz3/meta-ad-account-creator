@@ -7,6 +7,8 @@ use App\Models\AdAccount;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
@@ -168,7 +170,8 @@ class AdAccountResource extends Resource
                 SelectFilter::make('bm_account_id')
                     ->label('BM Account')
                     ->relationship('bmAccount', 'title'),
-                TrashedFilter::make(),
+                TrashedFilter::make()
+                    ->visible(fn () => Auth::user()->isAdmin()),
             ])
             ->actions([
                 ActionGroup::make([
@@ -178,6 +181,10 @@ class AdAccountResource extends Resource
             ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                    RestoreBulkAction::make()
+                        ->visible(fn () => Auth::user()->isAdmin()),
+                    ForceDeleteBulkAction::make()
+                        ->visible(fn () => Auth::user()->isAdmin()),
                 ]),
             ])
             ->defaultSort('created_at', 'desc')
