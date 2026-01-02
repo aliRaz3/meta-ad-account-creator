@@ -1,0 +1,33 @@
+name: CD
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  Deploy-Script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: executing script
+        uses: appleboy/ssh-action@master
+        with:
+            host: ${{ secrets.HOST }}
+            username: ${{ secrets.USERNAME }}
+            password: ${{ secrets.PASSWORD }}
+            port: ${{ secrets.PORT }}
+            script: |
+              cd /var/www/meta-ad-account-creator/
+              php artisan down
+              git pull
+              composer install --optimize-autoloader --no-dev
+              php artisan migrate --force
+              php artisan up
+              php artisan optimize
+              php artisan filament:optimize
+              php artisan horizon:terminate
+              npm install
+              npm run build > npm-build.log 2>&1 &
