@@ -206,16 +206,16 @@ return [
             'maxTime' => 0,        // worker never auto-restarts
             'maxJobs' => 0,        // unlimited jobs per worker
             'memory' => 1024,      // enough memory for long-running jobs
-            'tries' => 1,
-            'timeout' => 18000,    // 5 hours in seconds
-            'nice' => 0,
+            'tries' => 5,
+            'timeout' => 86300,    // max 24 hours
+            'backoff' => 5, // time (in seconds) to wait before retrying a failed job
         ],
     ],
 
     'environments' => [
         'production' => [
             'supervisor-1' => [
-                'maxProcesses' => 5,          // number of concurrent workers
+                'maxProcesses' => 100,          // number of concurrent workers
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
             ],

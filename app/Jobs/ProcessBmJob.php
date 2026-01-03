@@ -16,8 +16,9 @@ class ProcessBmJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $timeout = 18000; // 5 hours timeout
+    public int $timeout = 86300; // Max 24 hours
     public int $tries = 5;    // Max 5 attempts
+    public int $backoff = 2;  // Time (in seconds) to wait before retrying a failed job
 
     protected BmJob $bmJob;
 
