@@ -62,6 +62,6 @@ class AdminPanelProvider extends PanelProvider
                 ->navigationGroup('Debuggers'),
                 DebuggerPlugin::make()->authorize(condition: fn() => auth()->user()->canAccessDebuggers()),
             ])
-            ->spa();
+            ->spa(hasPrefetching: true);
     }
 }
