@@ -71,15 +71,22 @@ class BmJobObserver
     {
         // Check for progress milestones
         if ($bmJob->isDirty('processed_ad_accounts') && $bmJob->status === 'Processing') {
-            $progress = ($bmJob->processed_ad_accounts / $bmJob->total_ad_accounts) * 100;
+            $oldProcessed = $bmJob->getOriginal('processed_ad_accounts');
+            $newProcessed = $bmJob->processed_ad_accounts;
+            $totalAccounts = $bmJob->total_ad_accounts;
 
-            // Dispatch notifications at 25%, 50%, 75% milestones
-            if ($progress >= 25 && $progress < 30 && !$bmJob->wasRecentlyCreated) {
-                $this->dispatchNotification($bmJob, 'progress_25');
-            } elseif ($progress >= 50 && $progress < 55) {
-                $this->dispatchNotification($bmJob, 'progress_50');
-            } elseif ($progress >= 75 && $progress < 80) {
-                $this->dispatchNotification($bmJob, 'progress_75');
+            if ($totalAccounts > 0) {
+                $oldProgress = ($oldProcessed / $totalAccounts) * 100;
+                $newProgress = ($newProcessed / $totalAccounts) * 100;
+
+                // Dispatch notifications only when crossing thresholds
+                if ($oldProgress < 25 && $newProgress >= 25) {
+                    $this->dispatchNotification($bmJob, 'progress_25');
+                } elseif ($oldProgress < 50 && $newProgress >= 50) {
+                    $this->dispatchNotification($bmJob, 'progress_50');
+                } elseif ($oldProgress < 75 && $newProgress >= 75) {
+                    $this->dispatchNotification($bmJob, 'progress_75');
+                }
             }
         }
     }
