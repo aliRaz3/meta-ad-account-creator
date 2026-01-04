@@ -2,6 +2,8 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\AvatarProviders\BoringAvatarsProvider;
+use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -59,9 +61,24 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 \Boquizo\FilamentLogViewer\FilamentLogViewerPlugin::make()
-                ->navigationGroup('Debuggers'),
+                    ->navigationGroup('Debuggers'),
                 DebuggerPlugin::make()->authorize(condition: fn() => auth()->user()->canAccessDebuggers()),
             ])
-            ->spa();
+            ->spa(hasPrefetching: true)
+            ->colors([
+                'danger' => Color::Rose,
+                'gray' => Color::Gray,
+                'info' => Color::Blue,
+                'primary' => Color::Teal,
+                'success' => Color::Emerald,
+                'warning' => Color::Orange,
+            ])
+            ->viteTheme('resources/css/filament/admin/theme.css')
+            ->font('Poppins')
+            ->brandLogo(asset('images/logo.svg'))
+            ->brandLogoHeight('4rem')
+            ->favicon(asset('images/favicon.png'))
+            ->defaultAvatarProvider(BoringAvatarsProvider::class)
+            ->profile(isSimple: false);
     }
 }

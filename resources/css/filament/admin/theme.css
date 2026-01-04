@@ -2,3 +2,12 @@
 
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
+
+.fi-topbar {
+    background-color: var(--color-black);
+    min-height: calc(var(--spacing) * 20);
+}
+
+.fi-simple-main {
+    @apply bg-gray-300 dark:bg-slate-900;
+}
