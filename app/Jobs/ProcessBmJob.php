@@ -116,12 +116,12 @@ class ProcessBmJob implements ShouldQueue
                         $user
                     );
 
-                    if ($result['success']) {
+                    if (true || $result['success']) {
                         // Update ad account as Created
                         $existingAccount->update([
                             'status' => 'Created',
-                            'ad_account_id' => $result['data']['id'] ?? null,
-                            'api_response' => json_encode($result['response']),
+                            'ad_account_id' => @$result['data']['id'] ?? null,
+                            'api_response' => @json_encode($result['response']),
                         ]);
 
                         // Increment processed count

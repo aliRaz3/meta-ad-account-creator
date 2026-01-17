@@ -32,7 +32,7 @@ class BmJobObserver
             // Processing -> Paused: Calculate running time and set paused_at
             $bmJob->paused_at = $now;
             if ($bmJob->started_at) {
-                $runningSeconds = $now->diffInSeconds($bmJob->resumed_at ?? $bmJob->started_at);
+                $runningSeconds = $now->diffInSeconds($bmJob->resumed_at ?? $bmJob->started_at, true);
                 $bmJob->total_running_seconds += $runningSeconds;
             }
             $this->dispatchNotification($bmJob, 'job_paused');
@@ -44,7 +44,7 @@ class BmJobObserver
             // Processing -> Completed: Calculate final running time
             $bmJob->completed_at = $now;
             if ($bmJob->started_at) {
-                $runningSeconds = $now->diffInSeconds($bmJob->resumed_at ?? $bmJob->started_at);
+                $runningSeconds = $now->diffInSeconds($bmJob->resumed_at ?? $bmJob->started_at, true);
                 $bmJob->total_running_seconds += $runningSeconds;
 
                 // Calculate accounts per minute
@@ -57,7 +57,7 @@ class BmJobObserver
         } elseif ($newStatus === 'Failed') {
             // Any -> Failed: Calculate running time if was processing
             if ($oldStatus === 'Processing' && $bmJob->started_at) {
-                $runningSeconds = $now->diffInSeconds($bmJob->resumed_at ?? $bmJob->started_at);
+                $runningSeconds = $now->diffInSeconds($bmJob->resumed_at ?? $bmJob->started_at, true);
                 $bmJob->total_running_seconds += $runningSeconds;
             }
             $this->dispatchNotification($bmJob, 'job_failed');
@@ -124,7 +124,7 @@ class BmJobObserver
                     ? round(($bmJob->processed_ad_accounts / $bmJob->total_ad_accounts) * 100, 1)
                     : 0,
                 'status' => $bmJob->status,
-                'duration' => $bmJob->total_running_seconds ? gmdate("H:i:s", $bmJob->total_running_seconds) : '00:00:00',
+                'duration' => $this->resolveDuration($bmJob),
                 'accounts_per_minute' => $bmJob->accounts_per_minute,
                 'started_at' => $bmJob->started_at?->format('Y-m-d H:i:s'),
                 'completed_at' => $bmJob->completed_at?->format('Y-m-d H:i:s'),
@@ -141,6 +141,23 @@ class BmJobObserver
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    private function resolveDuration(BmJob $bmJob): string
+    {
+        // $bmJob->total_running_seconds ? gmdate("H:i:s", $bmJob->total_running_seconds) : '00:00:00'
+        $seconds = $bmJob->total_running_seconds ?? 0;
+
+        // check job status to calculate duration accordingly
+        if ($bmJob->status === 'Processing') {
+            $now = now();
+            if ($bmJob->started_at) {
+                $runningSeconds = $now->diffInSeconds($bmJob->resumed_at ?? $bmJob->started_at, true);
+                $seconds += $runningSeconds;
+            }
+        }
+
+        return $seconds ? gmdate("H:i:s", $seconds) : '00:00:00';
     }
 
     /**

@@ -6,6 +6,7 @@ use App\Filament\Resources\BmJobResource\Pages;
 use App\Jobs\ProcessBmJob;
 use App\Models\BmAccount;
 use App\Models\BmJob;
+use Dom\Text;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
@@ -151,6 +152,11 @@ class BmJobResource extends Resource
                         if ($percentage >= 50) return 'warning';
                         return 'gray';
                     }),
+
+                TextColumn::make('accounts_per_minute')
+                    ->label('Accounts/Min')
+                    ->sortable()
+                    ->formatStateUsing(fn($state) => $state !== null ? number_format($state, 2) : '0.00'),
 
                 TextColumn::make('status')
                     ->badge()
