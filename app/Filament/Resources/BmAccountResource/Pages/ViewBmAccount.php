@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\BmAccountResource\Pages;
 
 use App\Filament\Resources\BmAccountResource;
-use App\Filament\Resources\BmJobResource;
 use App\Models\BmJob;
 
 use Filament\Actions;
@@ -26,7 +25,7 @@ class ViewBmAccount extends ViewRecord
                 ->color('success')
                 ->modal()
                 ->modalWidth('3xl')
-                ->form([
+                ->schema([
                     TextInput::make('pattern')
                         ->label('Account Name Pattern')
                         ->required()
@@ -105,6 +104,11 @@ class ViewBmAccount extends ViewRecord
                         BmJob::dispatchNextPendingJob($bmAccountId);
                     }
                 }),
+            Actions\Action::make('manage_users')
+                ->label('Manage Business Users')
+                ->icon('heroicon-o-user-group')
+                ->color('info')
+                ->url(fn (): string => BmAccountResource::getUrl('business-users', ['record' => $this->record])),
             Actions\EditAction::make()
                 ->modal()
                 ->modalWidth('2xl'),
