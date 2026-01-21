@@ -16,8 +16,10 @@
         "laravel/tinker": "^2.10.1",
         "livewire/flux": "^2.9.0",
         "predis/predis": "^3.3",
+        "rappasoft/laravel-authentication-log": "^5.0",
         "stechstudio/filament-impersonate": "^4.0",
-        "stephenjude/filament-debugger": "^4.1"
+        "stephenjude/filament-debugger": "^4.1",
+        "tapp/filament-authentication-log": "^5.0"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.16",

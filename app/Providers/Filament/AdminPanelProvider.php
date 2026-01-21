@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use Boquizo\FilamentLogViewer\FilamentLogViewerPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -19,6 +20,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Stephenjude\FilamentDebugger\DebuggerPlugin;
+use Tapp\FilamentAuthenticationLog\FilamentAuthenticationLogPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -58,9 +60,9 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->plugins([
-                \Boquizo\FilamentLogViewer\FilamentLogViewerPlugin::make()
-                ->navigationGroup('Debuggers'),
+                FilamentLogViewerPlugin::make()->navigationGroup('Debuggers'),
                 DebuggerPlugin::make()->authorize(condition: fn() => auth()->user()->canAccessDebuggers()),
+                FilamentAuthenticationLogPlugin::make(),
             ])
             ->spa(hasPrefetching: true);
     }
