@@ -162,6 +162,66 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Business User Roles
+    |--------------------------------------------------------------------------
+    |
+    | Supported roles for inviting users to Business Manager.
+    |
+    */
+    'business_user_roles' => [
+        'ADMIN' => 'Admin - Can control all aspects of the business including modifying or deleting the account and adding or removing people from the employee list.
+Has READ and WRITE access to all assets that the Business Manager is connected with.',
+        'EMPLOYEE' => 'Employee - Can see all of information in business settings and be assigned roles by business admins. Cannot make any changes, except to add Pages or ad accounts which this user is an admin of to the business.
+Has READ access to all assets that the Buisness Manager is connected with.',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Business Verticals
+    |--------------------------------------------------------------------------
+    |
+    | Supported industry verticals for Business Manager.
+    |
+    */
+    'business_verticals' => [
+        'ADVERTISING' => 'Advertising',
+        'AUTOMOTIVE' => 'Automotive',
+        'CONSUMER_PACKAGED_GOODS' => 'Consumer Packaged Goods',
+        'ECOMMERCE' => 'E-commerce',
+        'EDUCATION' => 'Education',
+        'ENERGY_AND_UTILITIES' => 'Energy and Utilities',
+        'ENTERTAINMENT_AND_MEDIA' => 'Entertainment and Media',
+        'FINANCIAL_SERVICES' => 'Financial Services',
+        'GAMING' => 'Gaming',
+        'GOVERNMENT_AND_POLITICS' => 'Government and Politics',
+        'MARKETING' => 'Marketing',
+        'ORGANIZATIONS_AND_ASSOCIATIONS' => 'Organizations and Associations',
+        'PROFESSIONAL_SERVICES' => 'Professional Services',
+        'RETAIL' => 'Retail',
+        'TECHNOLOGY' => 'Technology',
+        'TELECOM' => 'Telecommunications',
+        'TRAVEL' => 'Travel',
+        'OTHER' => 'Other',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Ad Account User Tasks
+    |--------------------------------------------------------------------------
+    |
+    | Supported tasks/permissions for assigning users to Ad Accounts.
+    |
+    */
+    'ad_account_user_tasks' => [
+        'MANAGE' => 'Manage - Full control including editing ad account settings and managing users',
+        'ADVERTISE' => 'Advertise - Create and manage ads, campaigns, and audiences',
+        'ANALYZE' => 'Analyze - View performance data and reporting',
+        'DRAFT' => 'Draft - Create draft campaigns that require approval before running',
+        'AA_ANALYZE' => 'AA Analyze - View Facebook Analytics data',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Polling Interval
     |--------------------------------------------------------------------------
     |

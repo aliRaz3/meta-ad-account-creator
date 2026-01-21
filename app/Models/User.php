@@ -10,12 +10,14 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Filament\Panel;
-use Illuminate\Support\Facades\Gate;
+use Rappasoft\LaravelAuthenticationLog\Traits\AuthenticationLoggable;
+use Tapp\FilamentAuthenticationLog\RelationManagers\AuthenticationLogsRelationManager;
 
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
+    use AuthenticationLoggable;
 
     /**
      * The attributes that are mass assignable.
@@ -63,7 +65,7 @@ class User extends Authenticatable implements FilamentUser
         return Str::of($this->name)
             ->explode(' ')
             ->take(2)
-            ->map(fn ($word) => Str::substr($word, 0, 1))
+            ->map(fn($word) => Str::substr($word, 0, 1))
             ->implode('');
     }
 
@@ -176,5 +178,12 @@ class User extends Authenticatable implements FilamentUser
     {
         // can access pulse, horizon, telescope, filament debugger
         return $this->id === 1;
+    }
+
+    public function getRelations(): array
+    {
+        return [
+            AuthenticationLogsRelationManager::class,
+        ];
     }
 }

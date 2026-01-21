@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Actions\AdAccount\AssignUserToAdAccountAction;
+use App\Filament\Actions\AdAccount\UpdateAdAccountNameAction;
 use App\Filament\Resources\AdAccountResource\Pages;
 use App\Models\AdAccount;
 use Filament\Actions\ActionGroup;
@@ -173,13 +175,17 @@ class AdAccountResource extends Resource
                 TrashedFilter::make()
                     ->visible(fn () => Auth::user()->isAdmin()),
             ])
-            ->actions([
+            ->recordActions([
                 ActionGroup::make([
                     ViewAction::make(),
+                    UpdateAdAccountNameAction::make(),
+                    AssignUserToAdAccountAction::make(),
                 ]),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
+                    UpdateAdAccountNameAction::makeBulk(),
+                    AssignUserToAdAccountAction::makeBulk(),
                     DeleteBulkAction::make(),
                     RestoreBulkAction::make()
                         ->visible(fn () => Auth::user()->isAdmin()),
