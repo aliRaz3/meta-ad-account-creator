@@ -2,8 +2,10 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Actions\BmAccount\BulkImportBmAccountAction;
 use App\Filament\Actions\BmAccount\CreateBmJobAction;
 use App\Filament\Actions\BmAccount\CreateUserInviteAction;
+use App\Filament\Actions\BmAccount\DownloadBmImportTemplateAction;
 use App\Filament\Actions\BmAccount\ManageBusinessUsersAction;
 use App\Filament\Actions\BmAccount\UpdateBusinessInfoAction;
 use App\Filament\Actions\BmAccount\UpdateBusinessNameAction;
@@ -28,6 +30,7 @@ use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class BmAccountResource extends Resource
 {
@@ -58,7 +61,12 @@ class BmAccountResource extends Resource
                     ->label('Business Portfolio ID')
                     ->columnSpan(6)
                     ->helperText('The Meta Business Portfolio ID')
-                    ->unique(ignoreRecord: true),
+                    ->rules([
+                        fn ($record) => Rule::unique('bm_accounts', 'business_portfolio_id')
+                            ->where('user_id', Auth::id())
+                            ->whereNull('deleted_at')
+                            ->ignore($record?->id),
+                    ]),
 
                 Toggle::make('update_access_token')
                     ->label('Update Access Token')
@@ -139,6 +147,8 @@ class BmAccountResource extends Resource
                 ]),
             ])
             ->toolbarActions([
+                DownloadBmImportTemplateAction::make(),
+                BulkImportBmAccountAction::make(),
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                     RestoreBulkAction::make()
