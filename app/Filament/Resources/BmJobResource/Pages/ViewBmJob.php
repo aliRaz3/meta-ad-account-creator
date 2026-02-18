@@ -330,13 +330,13 @@ class ViewBmJob extends ViewRecord implements HasTable
                         }
                     }),
             ])
-            ->poll(config('adaccount.polling_interval', 5) . 's')
+            ->poll(fn() => session('global_polling_enabled', false) ? (config('adaccount.polling_interval', 5) . 's') : null)
             ->heading('Ad Accounts')
             ->description('List of all ad accounts being created by this job');
     }
 
     protected function getPollingInterval(): ?string
     {
-        return config('adaccount.polling_interval', 5) . 's';
+        return session('global_polling_enabled', false) ? (config('adaccount.polling_interval', 5) . 's') : null;
     }
 }

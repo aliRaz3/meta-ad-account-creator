@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\HasGlobalPolling;
 use App\Filament\Resources\BmJobResource\Pages;
 use App\Jobs\ProcessBmJob;
 use App\Models\BmAccount;
@@ -29,6 +30,8 @@ use Illuminate\Support\Facades\Auth;
 
 class BmJobResource extends Resource
 {
+    use HasGlobalPolling;
+
     protected static ?string $model = BmJob::class;
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-queue-list';
@@ -277,7 +280,7 @@ class BmJobResource extends Resource
                 ]),
             ])
             ->defaultSort('created_at', 'desc')
-            ->poll(config('adaccount.polling_interval', 5) . 's');
+            ->poll(fn() => static::isGlobalPollingEnabled() ? (config('adaccount.polling_interval', 5) . 's') : null);
     }
 
     public static function getRelations(): array

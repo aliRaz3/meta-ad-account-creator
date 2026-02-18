@@ -189,6 +189,6 @@ class BmJobsRelationManager extends RelationManager
                     ->url(fn(BmJob $record): string => BmJobResource::getUrl('view', ['record' => $record])),
             ])
             ->defaultSort('created_at', 'desc')
-            ->poll(config('adaccount.polling_interval', 5) . 's');
+            ->poll(fn() => session('global_polling_enabled', false) ? (config('adaccount.polling_interval', 5) . 's') : null);
     }
 }
