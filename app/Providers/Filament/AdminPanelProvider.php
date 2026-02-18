@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Livewire\GlobalPollingToggle;
 use Boquizo\FilamentLogViewer\FilamentLogViewerPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -11,6 +12,7 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -19,11 +21,17 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Livewire\Livewire;
 use Stephenjude\FilamentDebugger\DebuggerPlugin;
 use Tapp\FilamentAuthenticationLog\FilamentAuthenticationLogPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
+    public function boot(): void
+    {
+        Livewire::component('global-polling-toggle', GlobalPollingToggle::class);
+    }
+
     public function panel(Panel $panel): Panel
     {
         return $panel
@@ -64,6 +72,10 @@ class AdminPanelProvider extends PanelProvider
                 DebuggerPlugin::make()->authorize(condition: fn() => auth()->user()->canAccessDebuggers()),
                 FilamentAuthenticationLogPlugin::make(),
             ])
+            ->renderHook(
+                PanelsRenderHook::USER_MENU_BEFORE,
+                fn() => view('components.global-polling-toggle-wrapper')
+            )
             ->spa(hasPrefetching: true);
     }
 }

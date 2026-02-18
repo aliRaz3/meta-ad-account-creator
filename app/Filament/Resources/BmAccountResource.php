@@ -183,6 +183,7 @@ class BmAccountResource extends Resource
             ->where('user_id', Auth::id())
             ->withoutGlobalScopes([
                 \Illuminate\Database\Eloquent\SoftDeletingScope::class,
-            ]);
+            ])
+            ->withCount(['bmJobs', 'adAccounts']);
     }
 }
