@@ -16,7 +16,10 @@ class ViewAdAccount extends ViewRecord
             Actions\Action::make('view_job')
                 ->label('View Job')
                 ->icon('heroicon-o-eye')
-                ->url(fn() => route('filament.admin.resources.bm-jobs.view', ['record' => $this->record->bm_job_id]))
+                ->url(fn() => $this->record->bm_job_id
+                    ? route('filament.admin.resources.bm-jobs.view', ['record' => $this->record->bm_job_id])
+                    : null)
+                ->visible(fn() => $this->record->bm_job_id !== null)
                 ->color('primary'),
         ];
     }

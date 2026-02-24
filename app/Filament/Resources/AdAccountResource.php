@@ -66,7 +66,10 @@ class AdAccountResource extends Resource
 
                         TextEntry::make('bmJob.id')
                             ->label('Job ID')
-                            ->url(fn(AdAccount $record): string => route('filament.admin.resources.bm-jobs.view', ['record' => $record->bm_job_id])),
+                            ->url(fn(AdAccount $record): ?string => $record->bm_job_id
+                                ? route('filament.admin.resources.bm-jobs.view', ['record' => $record->bm_job_id])
+                                : null)
+                            ->placeholder('N/A'),
 
                         TextEntry::make('currency')
                             ->label('Currency'),
@@ -138,7 +141,10 @@ class AdAccountResource extends Resource
                 TextColumn::make('bmJob.id')
                     ->label('Job ID')
                     ->sortable()
-                    ->url(fn(AdAccount $record): string => route('filament.admin.resources.bm-jobs.view', ['record' => $record->bm_job_id])),
+                    ->url(fn(AdAccount $record): ?string => $record->bm_job_id
+                        ? route('filament.admin.resources.bm-jobs.view', ['record' => $record->bm_job_id])
+                        : null)
+                    ->placeholder('N/A'),
 
                 TextColumn::make('status')
                     ->badge()
@@ -174,9 +180,11 @@ class AdAccountResource extends Resource
                     ]),
                 SelectFilter::make('bm_account_id')
                     ->label('BM Account')
-                    ->relationship('bmAccount', 'title'),
+                    ->relationship('bmAccount', 'title')
+                    ->searchable()
+                    ->preload(),
                 TrashedFilter::make()
-                    ->visible(fn () => Auth::user()->isAdmin()),
+                    ->visible(fn() => Auth::user()->isAdmin()),
             ])
             ->recordActions([
                 ActionGroup::make([
@@ -191,9 +199,9 @@ class AdAccountResource extends Resource
                     AssignUserToAdAccountAction::makeBulk(),
                     DeleteBulkAction::make(),
                     RestoreBulkAction::make()
-                        ->visible(fn () => Auth::user()->isAdmin()),
+                        ->visible(fn() => Auth::user()->isAdmin()),
                     ForceDeleteBulkAction::make()
-                        ->visible(fn () => Auth::user()->isAdmin()),
+                        ->visible(fn() => Auth::user()->isAdmin()),
                 ]),
             ])
             ->defaultSort('created_at', 'desc')
