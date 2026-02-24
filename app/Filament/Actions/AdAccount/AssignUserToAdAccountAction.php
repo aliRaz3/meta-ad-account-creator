@@ -24,14 +24,14 @@ class AssignUserToAdAccountAction
     public static function make(): Action
     {
         return Action::make('assign_user')
-            ->label('Assign User')
+            ->label('Assign Users')
             ->icon('heroicon-o-user-plus')
             ->color('success')
             ->visible(fn(AdAccount $record): bool => !empty($record->ad_account_id))
             ->schema(fn(AdAccount $record) => static::schema($record))
             ->action(fn(array $data, AdAccount $record) => static::handleSingle($data, $record))
-            ->modalHeading('Assign User to Ad Account')
-            ->modalSubmitActionLabel('Assign User')
+            ->modalHeading('Assign Users to Ad Account')
+            ->modalSubmitActionLabel('Assign Users')
             ->modalSubmitAction(fn($action) => $action->color('primary'))
             ->modalWidth('lg');
     }
@@ -42,14 +42,14 @@ class AssignUserToAdAccountAction
     public static function makeBulk(): BulkAction
     {
         return BulkAction::make('bulk_assign_user')
-            ->label('Assign User to All')
+            ->label('Assign Users to All')
             ->icon('heroicon-o-user-plus')
             ->color('success')
             ->requiresConfirmation()
             ->deselectRecordsAfterCompletion()
             ->schema(fn(Collection $records) => static::schemaBulk($records))
             ->action(fn(array $data, Collection $records) => static::handleBulk($data, $records))
-            ->modalHeading('Assign User to Multiple Ad Accounts')
+            ->modalHeading('Assign Users to Multiple Ad Accounts')
             ->modalSubmitActionLabel('Assign to All')
             ->modalSubmitAction(fn($action) => $action->color('primary'))
             ->modalWidth('lg');
@@ -63,12 +63,13 @@ class AssignUserToAdAccountAction
         $userOptions = static::fetchUsers($record->bmAccount);
 
         return [
-            Select::make('user_id')
-                ->label('Select User')
+            Select::make('user_ids')
+                ->label('Select Users')
                 ->options($userOptions)
                 ->searchable()
+                ->multiple()
                 ->required()
-                ->helperText('Select a user from the Business Manager'),
+                ->helperText('Select one or more users from the Business Manager'),
 
             CheckboxList::make('tasks')
                 ->label('Permissions')
@@ -76,7 +77,7 @@ class AssignUserToAdAccountAction
                 ->descriptions(config('adaccount.ad_account_user_tasks'))
                 ->required()
                 ->default(['ANALYZE'])
-                ->helperText('Select one or more permissions for this user')
+                ->helperText('Select one or more permissions for all selected users')
                 ->columns(1),
         ];
     }
@@ -105,12 +106,13 @@ class AssignUserToAdAccountAction
         $userOptions = static::fetchUsers($firstRecord->bmAccount);
 
         return [
-            Select::make('user_id')
-                ->label('Select User')
+            Select::make('user_ids')
+                ->label('Select Users')
                 ->options($userOptions)
                 ->searchable()
+                ->multiple()
                 ->required()
-                ->helperText('This user will be assigned to all selected ad accounts'),
+                ->helperText('These users will be assigned to all selected ad accounts'),
 
             CheckboxList::make('tasks')
                 ->label('Permissions')
@@ -118,6 +120,7 @@ class AssignUserToAdAccountAction
                 ->descriptions(config('adaccount.ad_account_user_tasks'))
                 ->required()
                 ->default(['ANALYZE'])
+                ->helperText('Select one or more permissions for all selected users')
                 ->columns(1),
         ];
     }
@@ -161,30 +164,58 @@ class AssignUserToAdAccountAction
         try {
             $bmAccount = $record->bmAccount;
             $accessToken = $bmAccount->access_token;
-
             $service = new AdAccountService();
-            $result = $service->assignUserToAdAccount(
-                $record->ad_account_id,
-                $accessToken,
-                $data['user_id'],
-                $data['tasks']
-            );
+            $userIds = $data['user_ids'];
+            
+            $successCount = 0;
+            $failCount = 0;
+            $errors = [];
 
-            if ($result['success']) {
+            foreach ($userIds as $userId) {
+                $result = $service->assignUserToAdAccount(
+                    $record->ad_account_id,
+                    $accessToken,
+                    $userId,
+                    $data['tasks']
+                );
+
+                if ($result['success']) {
+                    $successCount++;
+                } else {
+                    $failCount++;
+                    $errors[] = "User {$userId}: " . ($result['error'] ?? 'Unknown error');
+                }
+            }
+
+            if ($successCount === count($userIds)) {
                 Notification::make()
-                    ->title('User Assigned Successfully')
+                    ->title('All Users Assigned Successfully')
                     ->success()
-                    ->body('User has been assigned to the ad account with selected permissions')
+                    ->body("{$successCount} user(s) assigned to the ad account")
+                    ->send();
+            } elseif ($successCount > 0) {
+                $body = "Assigned: {$successCount} | Failed: {$failCount}";
+                if (!empty($errors)) {
+                    $body .= "\n\nErrors:\n" . implode("\n", array_slice($errors, 0, 3));
+                }
+                Notification::make()
+                    ->title('Partial Assignment Completed')
+                    ->warning()
+                    ->body($body)
                     ->send();
             } else {
+                $body = "Failed to assign all {$failCount} user(s)";
+                if (!empty($errors)) {
+                    $body .= "\n\nErrors:\n" . implode("\n", array_slice($errors, 0, 3));
+                }
                 Notification::make()
-                    ->title('Failed to Assign User')
+                    ->title('Assignment Failed')
                     ->danger()
-                    ->body($result['error'] ?? 'Unknown error occurred')
+                    ->body($body)
                     ->send();
             }
         } catch (Exception $e) {
-            Log::error('Failed to assign user to ad account', [
+            Log::error('Failed to assign users to ad account', [
                 'ad_account_id' => $record->ad_account_id,
                 'error' => $e->getMessage(),
             ]);
@@ -218,45 +249,104 @@ class AssignUserToAdAccountAction
             return;
         }
 
-        $successCount = 0;
-        $failCount = 0;
+        // Get valid ad account IDs
+        $adAccountIds = $records->pluck('ad_account_id')->filter()->values()->toArray();
+        $skipped = $records->count() - count($adAccountIds);
 
-        foreach ($records as $record) {
-            if (empty($record->ad_account_id)) {
-                $failCount++;
-                continue;
-            }
+        if (empty($adAccountIds)) {
+            Notification::make()
+                ->title('No Valid Ad Accounts')
+                ->warning()
+                ->body('No ad accounts with valid Meta IDs found')
+                ->send();
+            return;
+        }
 
-            try {
-                $bmAccount = $record->bmAccount;
-                $accessToken = $bmAccount->access_token;
+        $firstRecord = $records->first();
+        $bmAccount = $firstRecord->bmAccount;
+        $accessToken = $bmAccount->access_token;
+        $service = new AdAccountService();
+        $userIds = $data['user_ids'];
+        $userCount = count($userIds);
 
-                $service = new AdAccountService();
-                $result = $service->assignUserToAdAccount(
-                    $record->ad_account_id,
-                    $accessToken,
-                    $data['user_id'],
-                    $data['tasks']
-                );
+        Log::info('Starting bulk assignment for multiple users', [
+            'total_accounts' => count($adAccountIds),
+            'user_count' => $userCount,
+        ]);
 
-                if ($result['success']) {
-                    $successCount++;
-                } else {
-                    $failCount++;
+        // Process each user using batch API
+        $totalAssigned = 0;
+        $totalFailed = 0;
+        $allErrors = [];
+
+        foreach ($userIds as $userId) {
+            $batchResult = $service->assignUserToAdAccountsBatch(
+                $adAccountIds,
+                $accessToken,
+                $userId,
+                $data['tasks']
+            );
+
+            $summary = $batchResult['summary'];
+            $totalAssigned += $summary['success'];
+            $totalFailed += $summary['failed'];
+
+            // Collect errors
+            foreach ($batchResult['results'] as $result) {
+                if (!$result['success']) {
+                    $allErrors[] = "User {$userId} → " . $result['ad_account_id'] . ": " . ($result['error'] ?? 'Unknown error');
                 }
-            } catch (Exception $e) {
-                Log::error('Bulk assign user failed', [
-                    'ad_account_id' => $record->ad_account_id,
-                    'error' => $e->getMessage(),
-                ]);
-                $failCount++;
             }
         }
 
-        Notification::make()
-            ->title('Bulk Assignment Complete')
-            ->success()
-            ->body("Assigned user to {$successCount} ad accounts. Failed: {$failCount}")
-            ->send();
+        // Calculate statistics
+        $expectedTotal = count($adAccountIds) * $userCount;
+        $successRate = $expectedTotal > 0 ? round(($totalAssigned / $expectedTotal) * 100) : 0;
+
+        // Build notification
+        $stats = "Users: {$userCount} | Accounts: " . count($adAccountIds) . " | Assigned: {$totalAssigned}/{$expectedTotal} ({$successRate}%)";
+        if ($skipped > 0) {
+            $stats .= " | Skipped: {$skipped}";
+        }
+
+        if ($totalAssigned === $expectedTotal) {
+            $title = 'All Users Assigned Successfully';
+            $type = 'success';
+        } elseif ($totalAssigned > 0) {
+            $title = 'Partial Assignment Completed';
+            $type = 'warning';
+        } else {
+            $title = 'Assignment Failed';
+            $type = 'danger';
+        }
+
+        $body = $stats;
+        if (!empty($allErrors)) {
+            $errorSample = implode("\n", array_slice($allErrors, 0, 5));
+            if (count($allErrors) > 5) {
+                $errorSample .= "\n... and " . (count($allErrors) - 5) . " more error(s)";
+            }
+            $body .= "\n\nErrors:\n{$errorSample}";
+        }
+
+        $notification = Notification::make()
+            ->title($title)
+            ->body($body);
+
+        match ($type) {
+            'success' => $notification->success(),
+            'warning' => $notification->warning(),
+            'danger' => $notification->danger(),
+        };
+
+        $notification->send();
+
+        Log::info('Bulk assignment for multiple users completed', [
+            'user_count' => $userCount,
+            'total_accounts' => count($adAccountIds),
+            'total_assigned' => $totalAssigned,
+            'total_failed' => $totalFailed,
+            'success_rate' => $successRate,
+        ]);
     }
 }
