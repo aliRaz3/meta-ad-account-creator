@@ -7,11 +7,13 @@ use App\Services\Meta\AdAccountService;
 use App\Services\Meta\BMUpdateService;
 use Exception;
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
 class AssignUserToAdAccountAction
@@ -25,31 +27,31 @@ class AssignUserToAdAccountAction
             ->label('Assign User')
             ->icon('heroicon-o-user-plus')
             ->color('success')
-            ->visible(fn (AdAccount $record): bool => !empty($record->ad_account_id))
-            ->schema(fn (AdAccount $record) => static::schema($record))
-            ->action(fn (array $data, AdAccount $record) => static::handleSingle($data, $record))
+            ->visible(fn(AdAccount $record): bool => !empty($record->ad_account_id))
+            ->schema(fn(AdAccount $record) => static::schema($record))
+            ->action(fn(array $data, AdAccount $record) => static::handleSingle($data, $record))
             ->modalHeading('Assign User to Ad Account')
             ->modalSubmitActionLabel('Assign User')
-            ->modalSubmitAction(fn ($action) => $action->color('primary'))
+            ->modalSubmitAction(fn($action) => $action->color('primary'))
             ->modalWidth('lg');
     }
 
     /**
      * Create action for bulk records
      */
-    public static function makeBulk(): Action
+    public static function makeBulk(): BulkAction
     {
-        return Action::make('bulk_assign_user')
+        return BulkAction::make('bulk_assign_user')
             ->label('Assign User to All')
             ->icon('heroicon-o-user-plus')
             ->color('success')
             ->requiresConfirmation()
             ->deselectRecordsAfterCompletion()
-            ->schema(fn ($records) => static::schemaBulk($records))
-            ->action(fn (array $data, $records) => static::handleBulk($data, $records))
+            ->schema(fn(Collection $records) => static::schemaBulk($records))
+            ->action(fn(array $data, Collection $records) => static::handleBulk($data, $records))
             ->modalHeading('Assign User to Multiple Ad Accounts')
             ->modalSubmitActionLabel('Assign to All')
-            ->modalSubmitAction(fn ($action) => $action->color('primary'))
+            ->modalSubmitAction(fn($action) => $action->color('primary'))
             ->modalWidth('lg');
     }
 
@@ -82,7 +84,7 @@ class AssignUserToAdAccountAction
     /**
      * Schema for bulk records
      */
-    protected static function schemaBulk($records): array
+    protected static function schemaBulk(Collection $records): array
     {
         // Check if all records have the same BM ID
         $bmIds = $records->pluck('bm_account_id')->unique();
@@ -198,7 +200,7 @@ class AssignUserToAdAccountAction
     /**
      * Handle bulk records assignment
      */
-    protected static function handleBulk(array $data, $records): void
+    protected static function handleBulk(array $data, Collection $records): void
     {
         // Check if all records have the same BM ID
         $bmIds = $records->pluck('bm_account_id')->unique();

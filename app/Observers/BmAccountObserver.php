@@ -19,16 +19,20 @@ class BmAccountObserver
         }
 
         // Soft delete all related BmJobs (this will trigger BmJobObserver)
-        $bmAccount->bmJobs()->each(function ($job) {
-            if (!$job->trashed()) {
-                $job->delete();
+        $bmAccount->bmJobs()->chunkById(500, function ($jobs) {
+            foreach ($jobs as $job) {
+                if (!$job->trashed()) {
+                    $job->delete();
+                }
             }
         });
 
         // Also soft delete ad accounts directly related to this BM account
-        $bmAccount->adAccounts()->each(function ($adAccount) {
-            if (!$adAccount->trashed()) {
-                $adAccount->delete();
+        $bmAccount->adAccounts()->chunkById(500, function ($adAccounts) {
+            foreach ($adAccounts as $adAccount) {
+                if (!$adAccount->trashed()) {
+                    $adAccount->delete();
+                }
             }
         });
     }
@@ -40,13 +44,17 @@ class BmAccountObserver
     public function restored(BmAccount $bmAccount): void
     {
         // Restore all soft-deleted BmJobs
-        $bmAccount->bmJobs()->onlyTrashed()->each(function ($job) {
-            $job->restore();
+        $bmAccount->bmJobs()->onlyTrashed()->chunkById(500, function ($jobs) {
+            foreach ($jobs as $job) {
+                $job->restore();
+            }
         });
 
         // Restore all soft-deleted AdAccounts
-        $bmAccount->adAccounts()->onlyTrashed()->each(function ($adAccount) {
-            $adAccount->restore();
+        $bmAccount->adAccounts()->onlyTrashed()->chunkById(500, function ($adAccounts) {
+            foreach ($adAccounts as $adAccount) {
+                $adAccount->restore();
+            }
         });
     }
 }

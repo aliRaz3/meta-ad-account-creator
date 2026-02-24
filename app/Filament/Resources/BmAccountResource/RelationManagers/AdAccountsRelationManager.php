@@ -20,6 +20,7 @@ class AdAccountsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn($query) => $query->with('bmJob'))
             ->columns([
                 TextColumn::make('name')
                     ->label('Account Name')
@@ -37,7 +38,10 @@ class AdAccountsRelationManager extends RelationManager
                 TextColumn::make('bmJob.id')
                     ->label('Job ID')
                     ->sortable()
-                    ->url(fn(AdAccount $record): string => BmJobResource::getUrl('view', ['record' => $record->bm_job_id])),
+                    ->url(fn(AdAccount $record): ?string => $record->bm_job_id
+                        ? BmJobResource::getUrl('view', ['record' => $record->bm_job_id])
+                        : null)
+                    ->placeholder('N/A'),
 
                 TextColumn::make('status')
                     ->badge()

@@ -2,11 +2,14 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Actions\BmAccount\AssignUserToAllAdAccountsAction;
 use App\Filament\Actions\BmAccount\BulkImportBmAccountAction;
+use App\Filament\Actions\BmAccount\BulkSyncAdAccountsAction;
 use App\Filament\Actions\BmAccount\CreateBmJobAction;
 use App\Filament\Actions\BmAccount\CreateUserInviteAction;
 use App\Filament\Actions\BmAccount\DownloadBmImportTemplateAction;
 use App\Filament\Actions\BmAccount\ManageBusinessUsersAction;
+use App\Filament\Actions\BmAccount\SyncAdAccountsAction;
 use App\Filament\Actions\BmAccount\UpdateBusinessInfoAction;
 use App\Filament\Actions\BmAccount\UpdateBusinessNameAction;
 use App\Filament\Resources\BmAccountResource\Pages;
@@ -62,7 +65,7 @@ class BmAccountResource extends Resource
                     ->columnSpan(6)
                     ->helperText('The Meta Business Portfolio ID')
                     ->rules([
-                        fn ($record) => Rule::unique('bm_accounts', 'business_portfolio_id')
+                        fn($record) => Rule::unique('bm_accounts', 'business_portfolio_id')
                             ->where('user_id', Auth::id())
                             ->whereNull('deleted_at')
                             ->ignore($record?->id),
@@ -130,7 +133,7 @@ class BmAccountResource extends Resource
             ])
             ->filters([
                 TrashedFilter::make()
-                    ->visible(fn () => Auth::user()->isAdmin()),
+                    ->visible(fn() => Auth::user()->isAdmin()),
             ])
             ->recordActions([
                 ActionGroup::make([
@@ -139,6 +142,8 @@ class BmAccountResource extends Resource
                     CreateUserInviteAction::make(),
                     ManageBusinessUsersAction::make(),
                     CreateBmJobAction::make(),
+                    SyncAdAccountsAction::make(),
+                    AssignUserToAllAdAccountsAction::make(),
                     ViewAction::make(),
                     EditAction::make()
                         ->modal()
@@ -150,11 +155,12 @@ class BmAccountResource extends Resource
                 DownloadBmImportTemplateAction::make(),
                 BulkImportBmAccountAction::make(),
                 BulkActionGroup::make([
+                    BulkSyncAdAccountsAction::make(),
                     DeleteBulkAction::make(),
                     RestoreBulkAction::make()
-                        ->visible(fn () => Auth::user()->isAdmin()),
+                        ->visible(fn() => Auth::user()->isAdmin()),
                     ForceDeleteBulkAction::make()
-                        ->visible(fn () => Auth::user()->isAdmin()),
+                        ->visible(fn() => Auth::user()->isAdmin()),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

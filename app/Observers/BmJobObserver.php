@@ -133,7 +133,6 @@ class BmJobObserver
             ];
 
             SendTelegramNotification::dispatch($user, $event, $data);
-
         } catch (\Exception $e) {
             Log::error('Failed to dispatch Telegram notification', [
                 'bm_job_id' => $bmJob->id,
@@ -155,9 +154,11 @@ class BmJobObserver
         }
 
         // Soft delete all related AdAccounts
-        $bmJob->adAccounts()->each(function ($adAccount) {
-            if (!$adAccount->trashed()) {
-                $adAccount->delete();
+        $bmJob->adAccounts()->chunkById(500, function ($adAccounts) {
+            foreach ($adAccounts as $adAccount) {
+                if (!$adAccount->trashed()) {
+                    $adAccount->delete();
+                }
             }
         });
     }
@@ -169,8 +170,10 @@ class BmJobObserver
     public function restored(BmJob $bmJob): void
     {
         // Restore all soft-deleted AdAccounts
-        $bmJob->adAccounts()->onlyTrashed()->each(function ($adAccount) {
-            $adAccount->restore();
+        $bmJob->adAccounts()->onlyTrashed()->chunkById(500, function ($adAccounts) {
+            foreach ($adAccounts as $adAccount) {
+                $adAccount->restore();
+            }
         });
     }
 }
