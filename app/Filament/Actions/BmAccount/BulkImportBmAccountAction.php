@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 use OpenSpout\Reader\XLSX\Reader as XLSXReader;
 use OpenSpout\Common\Exception\IOException;
 use OpenSpout\Common\Exception\UnsupportedTypeException;
@@ -78,8 +77,11 @@ class BulkImportBmAccountAction
             $results = [
                 'total' => 0,
                 'success' => 0,
+                'created' => 0,
+                'updated' => 0,
                 'errors' => [],
                 'skipped' => 0,
+                'name_updated' => 0,
                 'name_update_failed' => 0,
                 'name_update_errors' => [],
             ];
@@ -95,7 +97,13 @@ class BulkImportBmAccountAction
                     $rowData = [];
 
                     foreach ($cells as $cell) {
-                        $rowData[] = $cell->getValue();
+                        $value = $cell->getValue();
+                        // Convert numeric values to string to handle large numbers that Excel formats as scientific notation
+                        if (is_numeric($value)) {
+                            // Format as string without scientific notation
+                            $value = number_format($value, 0, '', '');
+                        }
+                        $rowData[] = $value;
                     }
 
                     // First row is header
@@ -140,6 +148,18 @@ class BulkImportBmAccountAction
 
                     if ($rowResult['success']) {
                         $results['success']++;
+
+                        // Track if it was created or updated
+                        if (isset($rowResult['was_updated']) && $rowResult['was_updated']) {
+                            $results['updated']++;
+                        } else {
+                            $results['created']++;
+                        }
+
+                        // Track business name updates
+                        if (isset($rowResult['name_updated']) && $rowResult['name_updated']) {
+                            $results['name_updated']++;
+                        }
 
                         // Track business name update failures
                         if (isset($rowResult['name_update_failed']) && $rowResult['name_update_failed']) {
@@ -196,17 +216,10 @@ class BulkImportBmAccountAction
 
     protected static function processRow(array $record, int $rowNumber): array
     {
-        // Validate the record
+        // Validate the record (removed unique constraint - we'll handle updates)
         $validator = Validator::make($record, [
             'title' => 'required|string|max:255',
-            'business_portfolio_id' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('bm_accounts', 'business_portfolio_id')
-                    ->where('user_id', Auth::id())
-                    ->whereNull('deleted_at'),
-            ],
+            'business_portfolio_id' => 'required|string|max:255',
             'access_token' => 'required|string',
             'new_bm_name' => 'nullable|string|max:255',
         ]);
@@ -220,15 +233,32 @@ class BulkImportBmAccountAction
         }
 
         try {
-            // Create BM Account
-            $bmAccount = BmAccount::create([
-                'user_id' => Auth::id(),
-                'title' => trim($record['title']),
-                'business_portfolio_id' => trim($record['business_portfolio_id']),
-                'access_token' => trim($record['access_token']),
-            ]);
+            // Check if BM Account already exists for this user
+            $bmAccount = BmAccount::where('user_id', Auth::id())
+                ->where('business_portfolio_id', trim($record['business_portfolio_id']))
+                ->first();
+
+            $wasUpdated = false;
+
+            if ($bmAccount) {
+                // Update existing BM Account
+                $bmAccount->update([
+                    'title' => trim($record['title']),
+                    'access_token' => trim($record['access_token']),
+                ]);
+                $wasUpdated = true;
+            } else {
+                // Create new BM Account
+                $bmAccount = BmAccount::create([
+                    'user_id' => Auth::id(),
+                    'title' => trim($record['title']),
+                    'business_portfolio_id' => trim($record['business_portfolio_id']),
+                    'access_token' => trim($record['access_token']),
+                ]);
+            }
 
             // If new_bm_name is provided, update the business name via API
+            $nameUpdated = false;
             $nameUpdateFailed = false;
             $nameUpdateError = '';
 
@@ -245,6 +275,7 @@ class BulkImportBmAccountAction
                     if ($result['success']) {
                         // Update local title to match the new name
                         $bmAccount->update(['title' => trim($record['new_bm_name'])]);
+                        $nameUpdated = true;
                     } else {
                         $nameUpdateFailed = true;
                         $nameUpdateError = 'API returned error: ' . ($result['error'] ?? 'Unknown error');
@@ -270,6 +301,8 @@ class BulkImportBmAccountAction
             return [
                 'success' => true,
                 'record' => $bmAccount,
+                'was_updated' => $wasUpdated,
+                'name_updated' => $nameUpdated,
                 'name_update_failed' => $nameUpdateFailed,
                 'name_update_error' => $nameUpdateError,
             ];
@@ -289,8 +322,26 @@ class BulkImportBmAccountAction
         $body = '<div style="font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; padding-right: 8px;">';
 
         $body .= '<div style="margin-bottom: 12px; font-weight: bold;">';
-        $body .= "✓ Successfully imported: {$results['success']} / {$results['total']} records";
+        $body .= "✓ Successfully processed: {$results['success']} / {$results['total']} records";
         $body .= '</div>';
+
+        if ($results['created'] > 0) {
+            $body .= '<div style="margin-bottom: 8px; color: #059669;">';
+            $body .= "  ➜ Created: {$results['created']}";
+            $body .= '</div>';
+        }
+
+        if ($results['updated'] > 0) {
+            $body .= '<div style="margin-bottom: 8px; color: #2563eb;">';
+            $body .= "  ➜ Updated: {$results['updated']}";
+            $body .= '</div>';
+        }
+
+        if ($results['name_updated'] > 0) {
+            $body .= '<div style="margin-bottom: 12px; color: #7c3aed;">';
+            $body .= "  ➜ Business names updated: {$results['name_updated']}";
+            $body .= '</div>';
+        }
 
         if ($results['skipped'] > 0) {
             $body .= '<div style="margin-bottom: 12px; color: #dc2626;">';

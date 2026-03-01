@@ -44,9 +44,10 @@ class DownloadBmImportTemplateAction
             $writer->addRow($headerRow);
 
             // Add sample data row
+            // Prefix business_portfolio_id with apostrophe to force text format in Excel
             $sampleCells = [
                 Cell::fromValue('My BM Account'),
-                Cell::fromValue('123456789'),
+                Cell::fromValue("'1234567890123456"), // Apostrophe prefix forces text format
                 Cell::fromValue('EAABsbCS1...'),
                 Cell::fromValue('Updated Business Name (Optional)'),
             ];
