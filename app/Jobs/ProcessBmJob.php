@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 
 class ProcessBmJob implements ShouldQueue
@@ -21,6 +22,7 @@ class ProcessBmJob implements ShouldQueue
     public int $backoff = 2;  // Time (in seconds) to wait before retrying a failed job
 
     protected BmJob $bmJob;
+    protected ?\Psr\Log\LoggerInterface $jobLogger = null;
 
     /**
      * Create a new job instance.
@@ -35,12 +37,14 @@ class ProcessBmJob implements ShouldQueue
      */
     public function handle(MetaApiService $metaApiService): void
     {
+        $this->initializeJobLogger();
+
         // Reload the job to get fresh data
         $this->bmJob->refresh();
 
         // Check if job should be processed
         if (!in_array($this->bmJob->status, ['Pending', 'Processing'])) {
-            Log::info("BmJob {$this->bmJob->id}: Skipping - status is {$this->bmJob->status}");
+            $this->logInfo("BmJob {$this->bmJob->id}: Skipping - status is {$this->bmJob->status}");
             return;
         }
 
@@ -50,7 +54,7 @@ class ProcessBmJob implements ShouldQueue
             'error_message' => null,
         ]);
 
-        Log::info("BmJob {$this->bmJob->id}: Started processing");
+        $this->logInfo("BmJob {$this->bmJob->id}: Started processing");
 
         try {
             $bmAccount = $this->bmJob->bmAccount;
@@ -67,7 +71,7 @@ class ProcessBmJob implements ShouldQueue
 
                 // Check if job has been paused
                 if ($this->bmJob->status === 'Paused') {
-                    Log::info("BmJob {$this->bmJob->id}: Paused by user");
+                    $this->logInfo("BmJob {$this->bmJob->id}: Paused by user");
 
                     // Dispatch next pending job for this BM Account
                     BmJob::dispatchNextPendingJob($this->bmJob->bm_account_id);
@@ -83,7 +87,7 @@ class ProcessBmJob implements ShouldQueue
                     ->first();
 
                 if ($existingAccount && $existingAccount->status === 'Created') {
-                    Log::info("BmJob {$this->bmJob->id}: Ad account '{$accountName}' already exists, skipping");
+                    $this->logInfo("BmJob {$this->bmJob->id}: Ad account '{$accountName}' already exists, skipping");
                     continue;
                 }
 
@@ -100,14 +104,16 @@ class ProcessBmJob implements ShouldQueue
                     ]);
                 }
 
-                Log::info("BmJob {$this->bmJob->id}: Creating ad account '{$accountName}'");
+                $this->logInfo("BmJob {$this->bmJob->id}: Creating ad account '{$accountName}'");
 
                 try {
                     // Get the user for proxy support
                     $user = $bmAccount->user;
 
                     // Call Meta API to create ad account (with user for proxy support)
-                    $result = $metaApiService->createAdAccount(
+                    // Retry only for specific transient Meta error: "Invalid parameter (Trace ID:...)".
+                    $result = $this->createAdAccountWithInvalidParameterRetries(
+                        $metaApiService,
                         $bmAccount->business_portfolio_id,
                         $bmAccount->access_token,
                         $accountName,
@@ -127,7 +133,7 @@ class ProcessBmJob implements ShouldQueue
                         // Increment processed count
                         $this->bmJob->increment('processed_ad_accounts');
 
-                        Log::info("BmJob {$this->bmJob->id}: Successfully created ad account '{$accountName}'");
+                        $this->logInfo("BmJob {$this->bmJob->id}: Successfully created ad account '{$accountName}'");
                     } else {
                         // Mark ad account as Failed
                         $existingAccount->update([
@@ -136,23 +142,48 @@ class ProcessBmJob implements ShouldQueue
                         ]);
 
                         $errorMessage = $metaApiService->formatError($result);
-                        Log::error("BmJob {$this->bmJob->id}: Failed to create ad account '{$accountName}': {$errorMessage}");
+
+                        $this->logError(
+                            "BmJob {$this->bmJob->id}: Failed to create ad account '{$accountName}': {$errorMessage}",
+                            [
+                                'bm_job_id' => $this->bmJob->id,
+                                'bm_account_id' => $this->bmJob->bm_account_id,
+                                'ad_account_name' => $accountName,
+                                'meta_response_raw' => $result['response'] ?? null,
+                            ]
+                        );
 
                         throw new \Exception("Failed to create ad account '{$accountName}': {$errorMessage}");
                     }
                 } catch (\Exception $e) {
                     // Mark ad account as Failed due to exception
-                    $existingAccount->update([
-                        'status' => 'Failed',
-                        'api_response' => json_encode([
-                            'error' => [
-                                'message' => $e->getMessage(),
-                                'type' => 'Exception',
-                            ],
-                        ]),
-                    ]);
+                    if ($existingAccount->status !== 'Failed' || empty($existingAccount->api_response)) {
+                        $existingAccount->update([
+                            'status' => 'Failed',
+                            'api_response' => json_encode([
+                                'error' => [
+                                    'message' => $e->getMessage(),
+                                    'type' => 'Exception',
+                                    'class' => get_class($e),
+                                    'file' => $e->getFile(),
+                                    'line' => $e->getLine(),
+                                ],
+                            ]),
+                        ]);
+                    }
 
-                    Log::error("BmJob {$this->bmJob->id}: Exception creating ad account '{$accountName}': {$e->getMessage()}");
+                    $this->logError(
+                        "BmJob {$this->bmJob->id}: Exception creating ad account '{$accountName}': {$e->getMessage()}",
+                        [
+                            'bm_job_id' => $this->bmJob->id,
+                            'bm_account_id' => $this->bmJob->bm_account_id,
+                            'ad_account_name' => $accountName,
+                            'exception_class' => get_class($e),
+                            'exception_file' => $e->getFile(),
+                            'exception_line' => $e->getLine(),
+                            'trace' => $e->getTraceAsString(),
+                        ]
+                    );
                     throw $e;
                 }
             }
@@ -166,11 +197,10 @@ class ProcessBmJob implements ShouldQueue
                 throw new \Exception("Job incomplete: processed {$this->bmJob->processed_ad_accounts} of {$this->bmJob->total_ad_accounts} ad accounts.");
             }
 
-            Log::info("BmJob {$this->bmJob->id}: Completed successfully");
+            $this->logInfo("BmJob {$this->bmJob->id}: Completed successfully");
 
             // Dispatch next pending job for this BM Account
             BmJob::dispatchNextPendingJob($this->bmJob->bm_account_id);
-
         } catch (\Exception $e) {
             // Job failed with exception
 
@@ -179,9 +209,113 @@ class ProcessBmJob implements ShouldQueue
                 'error_message' => $e->getMessage(),
             ]);
 
-            Log::error("BmJob {$this->bmJob->id}: Failed with exception: {$e->getMessage()}");
+            $this->logError(
+                "BmJob {$this->bmJob->id}: Failed with exception: {$e->getMessage()}",
+                [
+                    'bm_job_id' => $this->bmJob->id,
+                    'bm_account_id' => $this->bmJob->bm_account_id,
+                    'exception_class' => get_class($e),
+                    'exception_file' => $e->getFile(),
+                    'exception_line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                ]
+            );
             throw $e;
         }
+    }
+
+    protected function initializeJobLogger(): void
+    {
+        if ($this->jobLogger !== null) {
+            return;
+        }
+
+        $date = now()->format('Y-m-d');
+        $directory = storage_path('logs/bm-jobs');
+
+        File::ensureDirectoryExists($directory);
+
+        $filePath = "{$directory}/job-{$date}-{$this->bmJob->bm_account_id}-{$this->bmJob->id}.log";
+
+        $this->jobLogger = Log::build([
+            'driver' => 'single',
+            'path' => $filePath,
+            'level' => 'debug',
+            'replace_placeholders' => true,
+        ]);
+    }
+
+    protected function logInfo(string $message): void
+    {
+        $this->initializeJobLogger();
+        $this->jobLogger?->info($message);
+    }
+
+    protected function logError(string $message, array $context = []): void
+    {
+        $this->initializeJobLogger();
+        $this->jobLogger?->error($message, $context);
+    }
+
+    protected function createAdAccountWithInvalidParameterRetries(
+        MetaApiService $metaApiService,
+        string $businessPortfolioId,
+        string $accessToken,
+        string $accountName,
+        string $currency,
+        string $timezone,
+        mixed $user
+    ): array {
+        $retryDelaysInSeconds = [60, 180, 300]; // 1, 3, 5 minutes
+        $attempt = 0;
+
+        while (true) {
+            try {
+                $result = $metaApiService->createAdAccount(
+                    $businessPortfolioId,
+                    $accessToken,
+                    $accountName,
+                    $currency,
+                    $timezone,
+                    $user
+                );
+
+                if (($result['success'] ?? false) === true) {
+                    return $result;
+                }
+
+                $errorMessage = $metaApiService->formatError($result);
+
+                if (!$this->shouldRetryInvalidParameterError($errorMessage) || $attempt >= count($retryDelaysInSeconds)) {
+                    return $result;
+                }
+
+                $delay = $retryDelaysInSeconds[$attempt];
+                $this->logInfo(
+                    "BmJob {$this->bmJob->id}: Meta returned retryable invalid parameter error for '{$accountName}'. Retrying in {$delay} seconds (attempt " . ($attempt + 1) . '/3).'
+                );
+
+                sleep($delay);
+                $attempt++;
+            } catch (\Exception $e) {
+                if (!$this->shouldRetryInvalidParameterError($e->getMessage()) || $attempt >= count($retryDelaysInSeconds)) {
+                    throw $e;
+                }
+
+                $delay = $retryDelaysInSeconds[$attempt];
+                $this->logInfo(
+                    "BmJob {$this->bmJob->id}: Exception with retryable invalid parameter error for '{$accountName}'. Retrying in {$delay} seconds (attempt " . ($attempt + 1) . '/3).'
+                );
+
+                sleep($delay);
+                $attempt++;
+            }
+        }
+    }
+
+    protected function shouldRetryInvalidParameterError(string $message): bool
+    {
+        return str_contains($message, 'Invalid parameter (Trace ID:');
     }
 
     /**
@@ -205,12 +339,24 @@ class ProcessBmJob implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
+        $this->initializeJobLogger();
+
         $this->bmJob->update([
             'status' => 'Failed',
             'error_message' => $exception->getMessage(),
         ]);
 
-        Log::error("BmJob {$this->bmJob->id}: Job failed permanently: {$exception->getMessage()}");
+        $this->logError(
+            "BmJob {$this->bmJob->id}: Job failed permanently: {$exception->getMessage()}",
+            [
+                'bm_job_id' => $this->bmJob->id,
+                'bm_account_id' => $this->bmJob->bm_account_id,
+                'exception_class' => get_class($exception),
+                'exception_file' => $exception->getFile(),
+                'exception_line' => $exception->getLine(),
+                'trace' => $exception->getTraceAsString(),
+            ]
+        );
 
         // Dispatch next pending job for this BM Account
         BmJob::dispatchNextPendingJob($this->bmJob->bm_account_id);
