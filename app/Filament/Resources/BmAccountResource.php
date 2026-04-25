@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Actions\BmAccount\AssignUserToAllAdAccountsAction;
+use App\Filament\Actions\BmAccount\BulkCreateUserInviteAction;
 use App\Filament\Actions\BmAccount\BulkImportBmAccountAction;
 use App\Filament\Actions\BmAccount\BulkSyncAdAccountsAction;
 use App\Filament\Actions\BmAccount\CreateBmJobAction;
@@ -156,6 +157,7 @@ class BmAccountResource extends Resource
                 BulkImportBmAccountAction::make(),
                 BulkActionGroup::make([
                     BulkSyncAdAccountsAction::make(),
+                    BulkCreateUserInviteAction::make(),
                     DeleteBulkAction::make(),
                     RestoreBulkAction::make()
                         ->visible(fn() => Auth::user()->isAdmin()),
