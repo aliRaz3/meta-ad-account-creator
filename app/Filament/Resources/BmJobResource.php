@@ -303,9 +303,11 @@ class BmJobResource extends Resource
     {
         return parent::getEloquentQuery()
             ->where('user_id', Auth::id())
-            ->withoutGlobalScopes([
-                \Illuminate\Database\Eloquent\SoftDeletingScope::class,
-            ])
+            ->when(Auth::user()->isAdmin(), function ($query) {
+                $query->withoutGlobalScopes([
+                    \Illuminate\Database\Eloquent\SoftDeletingScope::class,
+                ]);
+            })
             ->with('bmAccount');
     }
 }
