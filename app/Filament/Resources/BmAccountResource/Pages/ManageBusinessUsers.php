@@ -117,7 +117,7 @@ class ManageBusinessUsers extends Page implements HasTable
                                     ->send();
 
                                 // Refresh the table
-                                $this->dispatch('$refresh');
+                                $this->resetTable();
                             } else {
                                 Notification::make()
                                     ->title('Failed to Change Role')
@@ -172,7 +172,7 @@ class ManageBusinessUsers extends Page implements HasTable
                                     ->send();
 
                                 // Refresh the table
-                                $this->dispatch('$refresh');
+                                $this->resetTable();
                             } else {
                                 Notification::make()
                                     ->title('Failed to Remove User')
